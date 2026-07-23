@@ -4,8 +4,10 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 **shake-to-alert SOS**, **live location sharing**, and **trusted-contact alerts**.
 
 > This directory contains the app source and platform config through **Phases
-> 0–4** of the [master plan](../MASTER_PLAN.md). It is designed to be built with
-> the Flutter SDK (not yet installed in this environment).
+> 0–4 and the code deliverables of Phase 5** of the
+> [master plan](../MASTER_PLAN.md). It is designed to be built with the Flutter
+> SDK (not yet installed in this environment). Remaining Phase 5 work is
+> process/testing/ops — tracked in [`../docs/LAUNCH_CHECKLIST.md`](../docs/LAUNCH_CHECKLIST.md).
 
 ## What's implemented so far
 
@@ -38,24 +40,30 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Escalation ladder** (unanswered SOS → next tier) | `functions/index.js` (`escalateUnacknowledged`) | ✅ Phase 4 |
 | **Ack notification back to the user** | `functions/index.js` (`onAckCreated`) | ✅ Phase 4 |
 | **Storage security rules** | `storage.rules` | ✅ Phase 4 |
+| **Expiring track links** (leaked-URL hardening) | `firestore.rules`, gateways | ✅ Phase 5 |
+| **Locale-aware emergency numbers** | `lib/core/services/emergency_numbers.dart` | ✅ Phase 5 |
+| **Account & data deletion + retention** | `lib/core/services/account_service.dart`, `functions/index.js` | ✅ Phase 5 |
+| **Privacy & data-controls screen** | `lib/features/privacy/privacy_screen.dart` | ✅ Phase 5 |
+| **Localization scaffolding** (en + hi) | `l10n.yaml`, `lib/l10n/*.arb` | ✅ Phase 5 |
+| **Accessibility on SOS button** | `lib/features/sos/sos_button.dart` | ✅ Phase 5 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
 
 ## Not yet done (next steps)
 
-- **Phases 0–4 are complete.** Remaining work is Phase 5 (hardening) and Phase 6.
+- **Phases 0–4 done; Phase 5 code done.** Remaining Phase 5 work is process/
+  testing/ops — see [`../docs/LAUNCH_CHECKLIST.md`](../docs/LAUNCH_CHECKLIST.md).
+- **End-to-end encryption** of location/media is still a design task (not built).
 - **Firebase-in-isolate writes** (Phase 2 hardening): the background isolate
-  currently forwards `position`/`shake` to the UI isolate, which stays alive
-  under the foreground service. For writes while the app is *fully killed*,
-  initialize Firebase inside `onStart` and write directly. Stub is in place.
-- **Phase 5 hardening**: end-to-end encryption of location/media; replace the
-  capability-URL track id with a random share token + expiry; tighten the
-  `acks` read rule to actual recipients; region-specific emergency numbers
-  (the guardian "Call police" currently dials `112` — make it locale-aware);
-  pen-test; accessibility + battery/device-matrix testing; store submission.
+  forwards `position`/`shake` to the UI isolate, which stays alive under the
+  foreground service. For writes while the app is *fully killed*, initialize
+  Firebase inside `onStart` and write directly. Stub is in place.
+- **Localization:** run `flutter run` once to generate `AppLocalizations`, then
+  add `AppLocalizations.delegate` and migrate hardcoded strings to `.arb` keys.
 - The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
   Google Maps needs an API key (Android + iOS).
+- **Phase 6:** wearables, voice trigger, widgets, community features.
 
 ## iOS trigger fallbacks (Phase 3)
 

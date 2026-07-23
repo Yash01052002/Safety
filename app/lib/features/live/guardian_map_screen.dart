@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/models/ack.dart';
+import '../../core/services/emergency_numbers.dart';
 import '../../core/services/firestore_alert_gateway.dart';
 
 /// In-app live map a guardian uses to watch a shared session. Reads the same
@@ -48,7 +49,8 @@ class _GuardianMapScreenState extends State<GuardianMapScreen> {
     if (mounted) setState(() => _acked = true);
 
     if (response == AckResponse.callingPolice) {
-      final uri = Uri.parse('tel:112'); // region-specific; see Phase 4 notes
+      // Dial the guardian's local emergency number.
+      final uri = Uri.parse('tel:${EmergencyNumbers.forDeviceLocale()}');
       if (await canLaunchUrl(uri)) await launchUrl(uri);
     }
   }

@@ -38,6 +38,11 @@ exports.onSosCreated = functions.firestore
 
     // Seed the public, link-scoped track document the guardian web page reads.
     // Only non-sensitive fields — never the recipient list or user id.
+    // Link expires 24h after the SOS so a leaked track URL can't be replayed
+    // indefinitely (enforced in firestore.rules).
+    const expiresAt = admin.firestore.Timestamp.fromMillis(
+      Date.now() + 24 * 60 * 60 * 1000
+    );
     await db.collection("publicTracks").doc(eventId).set({
       kind: "sos",
       userName,
@@ -46,6 +51,7 @@ exports.onSosCreated = functions.firestore
       lng: event.lng != null ? event.lng : null,
       startedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt,
     });
 
     const trackUrl = `${TRACK_BASE}/e/${eventId}`;
@@ -177,4 +183,90 @@ exports.onAckCreated = functions.firestore
       },
       android: { priority: "high" },
     });
+  });
+
+// ── Privacy: account & data deletion + retention (Phase 5) ──
+
+/** Recursively delete a collection/subcollection in batches. */
+async function deleteCollection(ref, batchSize = 200) {
+  while (true) {
+    const snap = await ref.limit(batchSize).get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+    if (snap.size < batchSize) break;
+  }
+}
+
+/** Purge all data for a user: contacts, live sessions, SOS events (+ their
+ *  track/media/acks subcollections and public projections), Storage media,
+ *  and the profile document. */
+async function purgeUser(uid) {
+  await deleteCollection(db.collection("users").doc(uid).collection("contacts"));
+
+  const events = await db.collection("sosEvents").where("userId", "==", uid).get();
+  for (const doc of events.docs) {
+    await deleteCollection(doc.ref.collection("track"));
+    await deleteCollection(doc.ref.collection("media"));
+    await deleteCollection(doc.ref.collection("acks"));
+    await db.collection("publicTracks").doc(doc.id).delete().catch(() => {});
+    await doc.ref.delete();
+  }
+
+  const sessions =
+    await db.collection("liveSessions").where("userId", "==", uid).get();
+  for (const s of sessions.docs) {
+    await db.collection("publicTracks").doc(s.id).delete().catch(() => {});
+    await s.ref.delete();
+  }
+
+  await admin.storage().bucket().deleteFiles({ prefix: `sosMedia/${uid}/` })
+    .catch((e) => console.error("storage purge failed", e));
+
+  await db.collection("users").doc(uid).delete().catch(() => {});
+}
+
+/** Callable: the signed-in user erases their own account data. */
+exports.deleteUserData = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in required.");
+  }
+  await purgeUser(context.auth.uid);
+  return { ok: true };
+});
+
+/** Backstop: if the auth account is deleted by any path, purge its data too. */
+exports.onAuthUserDeleted = functions.auth.user().onDelete(async (user) => {
+  await purgeUser(user.uid);
+});
+
+/** Retention: nightly, delete resolved SOS events (and their subcollections)
+ *  older than 90 days, plus expired public tracks. Adjust to your policy. */
+exports.purgeOldData = functions.pubsub
+  .schedule("every 24 hours")
+  .onRun(async () => {
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const old = await db
+      .collection("sosEvents")
+      .where("status", "in", ["resolved", "cancelled"])
+      .where("startedAt", "<", cutoff)
+      .get();
+    for (const doc of old.docs) {
+      await deleteCollection(doc.ref.collection("track"));
+      await deleteCollection(doc.ref.collection("media"));
+      await deleteCollection(doc.ref.collection("acks"));
+      await db.collection("publicTracks").doc(doc.id).delete().catch(() => {});
+      await doc.ref.delete();
+    }
+
+    const expired = await db
+      .collection("publicTracks")
+      .where("expiresAt", "<", admin.firestore.Timestamp.now())
+      .get();
+    const batch = db.batch();
+    expired.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+    console.log(`Retention: purged ${old.size} events, ${expired.size} tracks`);
+    return null;
   });

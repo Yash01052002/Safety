@@ -37,6 +37,11 @@ dependencies:
   cloud_firestore: ^4.15.8
   firebase_messaging: ^14.7.19
   firebase_storage: ^11.6.9        # SOS media (audio/photo evidence)
+  cloud_functions: ^4.6.9          # callable: account/data deletion
+
+  # Localization
+  flutter_localizations:
+    sdk: flutter
 
   # Media capture + emergency alarm (Phase 4)
   record: ^5.0.5                   # audio recording on SOS
@@ -64,3 +69,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true # runs gen-l10n from lib/l10n/*.arb (see l10n.yaml)
