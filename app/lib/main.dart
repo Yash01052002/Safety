@@ -7,6 +7,7 @@ import 'core/services/auth_service.dart';
 import 'core/services/background_service.dart';
 import 'core/services/console_alert_gateway.dart';
 import 'core/services/location_service.dart';
+import 'core/services/settings_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/home/home_screen.dart';
@@ -35,22 +36,35 @@ Future<void> main() async {
     debugPrint('Background service unavailable: $e');
   }
 
-  runApp(SurakshaApp(firebaseReady: firebaseReady));
+  final settings = SettingsService();
+  await settings.load();
+
+  runApp(SurakshaApp(firebaseReady: firebaseReady, settings: settings));
 }
 
 class SurakshaApp extends StatelessWidget {
-  const SurakshaApp({super.key, required this.firebaseReady});
+  const SurakshaApp({
+    super.key,
+    required this.firebaseReady,
+    required this.settings,
+  });
 
   final bool firebaseReady;
+  final SettingsService settings;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Suraksha',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      home: firebaseReady ? AuthGate(auth: AuthService()) : const _DevHome(),
+    // Settings live above the auth gate so both the login-less dev mode and the
+    // authenticated app (and their shake detectors) share one source of truth.
+    return ChangeNotifierProvider<SettingsService>.value(
+      value: settings,
+      child: MaterialApp(
+        title: 'Suraksha',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: firebaseReady ? AuthGate(auth: AuthService()) : const _DevHome(),
+      ),
     );
   }
 }
