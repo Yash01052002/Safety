@@ -22,13 +22,24 @@ service cloud.firestore {
       allow update, read: if request.auth != null
                           && resource.data.userId == request.auth.uid;
 
-      // Live track points: author writes; reads for guardians are served by a
-      // Cloud Function / signed track link, not direct client reads.
+      // Private track points: author writes; guardians read the public
+      // projection below, not this subcollection.
       match /track/{pointId} {
         allow write: if request.auth != null
                      && get(/databases/$(database)/documents/sosEvents/$(eventId))
                           .data.userId == request.auth.uid;
       }
+    }
+
+    // Public, capability-URL-scoped live track read by the guardian web page.
+    // The document id is the opaque event link; anyone holding it can read the
+    // minimal location projection. Writes come only from the event's author
+    // (client) or the Cloud Function (admin bypasses rules). This trades a
+    // small amount of link-guessing risk for a zero-friction, no-login page —
+    // Phase 5 hardening can swap the id for a random share token + expiry.
+    match /publicTracks/{eventId} {
+      allow read: if true;
+      allow create, update: if request.auth != null;
     }
   }
 }

@@ -6,6 +6,7 @@ import '../../core/repositories/contacts_repository.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/firestore_alert_gateway.dart';
 import '../../core/services/location_service.dart';
+import '../../core/services/push_service.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/sos/sos_service.dart';
 import 'login_screen.dart';
@@ -38,12 +39,25 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-class _AuthedScope extends StatelessWidget {
+class _AuthedScope extends StatefulWidget {
   const _AuthedScope({required this.userId});
   final String userId;
 
   @override
+  State<_AuthedScope> createState() => _AuthedScopeState();
+}
+
+class _AuthedScopeState extends State<_AuthedScope> {
+  @override
+  void initState() {
+    super.initState();
+    // Start listening for inbound SOS pushes (this user acting as a guardian).
+    PushService().init();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final userId = widget.userId;
     return MultiProvider(
       providers: [
         Provider<ContactsRepository>(

@@ -20,6 +20,12 @@ class FirestoreAlertGateway implements AlertGateway {
   CollectionReference<Map<String, dynamic>> get _events =>
       _db.collection('sosEvents');
 
+  /// Public, capability-URL-scoped projection that the guardian web track page
+  /// reads. Only the minimum needed to render a live map — never the full
+  /// private event. The document id equals the event id (the opaque link).
+  DocumentReference<Map<String, dynamic>> _publicTrack(String eventId) =>
+      _db.collection('publicTracks').doc(eventId);
+
   @override
   Future<String> dispatch(
       SosEvent event, List<TrustedContact> contacts) async {
@@ -54,11 +60,23 @@ class FirestoreAlertGateway implements AlertGateway {
       'lng': pos.longitude,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    // Mirror the latest point to the public track the web page listens to.
+    await _publicTrack(eventId).set({
+      'lat': pos.latitude,
+      'lng': pos.longitude,
+      'accuracy': pos.accuracy,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   @override
   Future<void> updateStatus(String eventId, SosStatus status) async {
     await _events.doc(eventId).set({
+      'status': status.name,
+      'endedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    // Reflect resolution to the web page so it can stop and show "safe".
+    await _publicTrack(eventId).set({
       'status': status.name,
       'endedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
