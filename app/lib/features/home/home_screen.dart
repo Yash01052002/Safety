@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/models/sos_event.dart';
 import '../../core/models/trusted_contact.dart';
+import '../../core/repositories/contacts_repository.dart';
 import '../../core/theme/app_theme.dart';
+import '../contacts/contacts_screen.dart';
 import '../sos/shake_detector.dart';
 import '../sos/sos_button.dart';
 import '../sos/sos_service.dart';
@@ -19,16 +21,37 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ShakeDetector _shake;
   bool _shakeEnabled = true;
 
-  // In a real build these come from the contacts repository / Firestore.
-  final List<TrustedContact> _contacts = const [
+  /// Live guardians. Populated from Firestore when a ContactsRepository is
+  /// provided (authenticated build); falls back to a dev placeholder otherwise.
+  List<TrustedContact> _contacts = const [
     TrustedContact(id: '1', name: 'Mom', phone: '+10000000000', priority: 0),
   ];
+
+  ContactsRepository? get _repo {
+    // Optional: absent in dev mode (no Firebase / no provider registered).
+    try {
+      return Provider.of<ContactsRepository>(context, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _shake = ShakeDetector(onShake: _onShake);
     if (_shakeEnabled) _shake.start();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final repo = _repo;
+    if (repo != null) {
+      repo.watch().listen((list) {
+        if (mounted) setState(() => _contacts = list);
+      });
+    }
   }
 
   void _onShake() {
@@ -62,6 +85,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.group),
+            tooltip: 'Trusted contacts',
+            onPressed: () {
+              final repo = _repo;
+              if (repo == null) return;
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => ContactsScreen(repo: repo),
+              ));
+            },
           ),
         ],
       ),
