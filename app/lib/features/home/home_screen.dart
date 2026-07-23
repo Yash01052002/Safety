@@ -7,10 +7,12 @@ import 'package:provider/provider.dart';
 import '../../core/models/sos_event.dart';
 import '../../core/models/trusted_contact.dart';
 import '../../core/repositories/contacts_repository.dart';
+import '../../core/repositories/safety_report_repository.dart';
 import '../../core/services/background_service.dart';
 import '../../core/services/quick_trigger_service.dart';
 import '../../core/services/settings_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../community/community_map_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../journey/journey_card.dart';
 import '../journey/journey_controller.dart';
@@ -49,6 +51,14 @@ class _HomeScreenState extends State<HomeScreen> {
     // Optional: absent in dev mode (no Firebase / no provider registered).
     try {
       return Provider.of<ContactsRepository>(context, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  SafetyReportRepository? get _safetyRepo {
+    try {
+      return Provider.of<SafetyReportRepository>(context, listen: false);
     } on ProviderNotFoundException {
       return null;
     }
@@ -182,6 +192,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ));
             },
           ),
+          if (_safetyRepo != null)
+            IconButton(
+              icon: const Icon(Icons.map_outlined),
+              tooltip: 'Community safety map',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => CommunityMapScreen(repo: _safetyRepo!),
+              )),
+            ),
           IconButton(
             icon: const Icon(Icons.tune),
             tooltip: 'Shake settings',
