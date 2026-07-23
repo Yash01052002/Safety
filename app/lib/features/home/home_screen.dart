@@ -8,9 +8,12 @@ import '../../core/models/sos_event.dart';
 import '../../core/models/trusted_contact.dart';
 import '../../core/repositories/contacts_repository.dart';
 import '../../core/services/background_service.dart';
+import '../../core/services/quick_trigger_service.dart';
+import '../../core/services/settings_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../contacts/contacts_screen.dart';
 import '../live/live_share_card.dart';
+import '../settings/shake_settings_screen.dart';
 import '../sos/shake_detector.dart';
 import '../sos/sos_button.dart';
 import '../sos/sos_service.dart';
@@ -35,6 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription? _bgShakeSub;
   StreamSubscription? _contactsSub;
   bool _contactsBound = false;
+  late final QuickTriggerService _quickTrigger;
+
+  SettingsService get _settingsService => context.read<SettingsService>();
 
   ContactsRepository? get _repo {
     // Optional: absent in dev mode (no Firebase / no provider registered).
@@ -48,13 +54,24 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _shake = ShakeDetector(onShake: _onShake);
+    final s = context.read<SettingsService>().settings;
+    _shakeEnabled = s.shakeEnabled;
+    _shake = ShakeDetector(
+      onShake: _onShake,
+      thresholdG: s.thresholdG,
+      requiredShakes: s.requiredShakes,
+    );
     if (_shakeEnabled) _enableProtection();
 
     // Shakes detected by the background isolate (screen locked / app backgrounded)
     // arrive here so the full SOS flow (auth + gateway) can run.
     _bgShakeSub =
         FlutterBackgroundService().on('shake').listen((_) => _onShake());
+
+    // Alternative triggers (home-screen shortcut, deep link from a Siri
+    // Shortcut / Action Button / Back Tap) also fire the SOS.
+    _quickTrigger = QuickTriggerService(onTrigger: _onShake);
+    _quickTrigger.init();
   }
 
   @override
@@ -67,12 +84,23 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) setState(() => _contacts = list);
       });
     }
+    // Keep the live detector in sync with calibrated sensitivity. Using
+    // listen:true here registers a dependency, so this re-runs on settings
+    // changes (didChangeDependencies is the correct place for that).
+    final s = Provider.of<SettingsService>(context).settings;
+    _shake.configure(thresholdG: s.thresholdG, requiredShakes: s.requiredShakes);
   }
 
   void _onShake() {
     final sos = context.read<SosController>();
-    // Shake fires with a short countdown so a genuine accident can be cancelled.
-    sos.trigger(SosTrigger.shake, _contacts, countdownSeconds: 5);
+    final s = _settingsService.settings;
+    // Respect the user's stealth / countdown calibration.
+    sos.trigger(
+      SosTrigger.shake,
+      _contacts,
+      silent: s.stealthMode,
+      countdownSeconds: s.countdownSeconds,
+    );
   }
 
   Future<void> _enableProtection() async {
@@ -94,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _shake.stop();
     _bgShakeSub?.cancel();
     _contactsSub?.cancel();
+    _quickTrigger.dispose();
     super.dispose();
   }
 
@@ -112,6 +141,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: _shakeEnabled,
                 onChanged: (v) {
                   setState(() => _shakeEnabled = v);
+                  _settingsService
+                      .update(_settingsService.settings.copyWith(shakeEnabled: v));
                   v ? _enableProtection() : _disableProtection();
                 },
               ),
@@ -127,6 +158,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (_) => ContactsScreen(repo: repo),
               ));
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Shake settings',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const ShakeSettingsScreen(),
+            )),
           ),
         ],
       ),

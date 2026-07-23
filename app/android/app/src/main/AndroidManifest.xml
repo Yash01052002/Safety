@@ -39,6 +39,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep link suraksha://sos — invokable by an app shortcut or an
+                 assistant action to fire an SOS without navigating the UI. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="suraksha" android:host="sos" />
+            </intent-filter>
         </activity>
 
         <!-- Background service for shake detection + live location -->

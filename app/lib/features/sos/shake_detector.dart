@@ -12,10 +12,11 @@ import 'package:sensors_plus/sensors_plus.dart';
 class ShakeDetector {
   /// Acceleration magnitude (in G, gravity subtracted) above which a single
   /// movement counts as a shake spike. Higher = harder shake required.
-  final double thresholdG;
+  /// Mutable so the calibration screen can tune it live.
+  double thresholdG;
 
-  /// Number of spikes required within [window] to fire.
-  final int requiredShakes;
+  /// Number of spikes required within [window] to fire. Mutable (live-tunable).
+  int requiredShakes;
 
   /// Rolling window in which spikes must accumulate.
   final Duration window;
@@ -28,14 +29,25 @@ class ShakeDetector {
 
   final void Function() onShake;
 
+  /// Optional hook fired on every counted spike — used by the calibration
+  /// screen to visualize sensitivity while the user test-shakes.
+  void Function(int spikeCount)? onSpike;
+
   ShakeDetector({
     required this.onShake,
+    this.onSpike,
     this.thresholdG = 2.7,
     this.requiredShakes = 3,
     this.window = const Duration(milliseconds: 1200),
     this.minSpikeGap = const Duration(milliseconds: 120),
     this.cooldown = const Duration(seconds: 3),
   });
+
+  /// Apply new sensitivity without dropping the sensor subscription.
+  void configure({double? thresholdG, int? requiredShakes}) {
+    if (thresholdG != null) this.thresholdG = thresholdG;
+    if (requiredShakes != null) this.requiredShakes = requiredShakes;
+  }
 
   StreamSubscription<AccelerometerEvent>? _sub;
   final List<DateTime> _spikeTimes = [];
@@ -75,6 +87,7 @@ class ShakeDetector {
 
     // Drop spikes older than the rolling window.
     _spikeTimes.removeWhere((t) => now.difference(t) > window);
+    onSpike?.call(_spikeTimes.length);
 
     if (_spikeTimes.length >= requiredShakes) {
       _spikeTimes.clear();

@@ -1,0 +1,182 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/models/sos_settings.dart';
+import '../../core/services/settings_service.dart';
+import '../../core/theme/app_theme.dart';
+import '../sos/shake_detector.dart';
+
+/// Lets the user calibrate shake sensitivity with live feedback, and set the
+/// cancel-countdown and stealth behavior.
+class ShakeSettingsScreen extends StatefulWidget {
+  const ShakeSettingsScreen({super.key});
+
+  @override
+  State<ShakeSettingsScreen> createState() => _ShakeSettingsScreenState();
+}
+
+class _ShakeSettingsScreenState extends State<ShakeSettingsScreen> {
+  late ShakeDetector _tester;
+  int _spikes = 0;
+  bool _fired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = context.read<SettingsService>().settings;
+    _tester = ShakeDetector(
+      thresholdG: s.thresholdG,
+      requiredShakes: s.requiredShakes,
+      onSpike: (count) => setState(() {
+        _spikes = count;
+        _fired = false;
+      }),
+      onShake: () => setState(() {
+        _fired = true;
+        _spikes = 0;
+      }),
+    )..start();
+  }
+
+  @override
+  void dispose() {
+    _tester.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.watch<SettingsService>();
+    final s = service.settings;
+
+    void save(SosSettings next) {
+      service.update(next);
+      _tester.configure(
+        thresholdG: next.thresholdG,
+        requiredShakes: next.requiredShakes,
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Shake to alert')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _TestMeter(spikes: _spikes, needed: s.requiredShakes, fired: _fired),
+          const SizedBox(height: 24),
+
+          Text('Sensitivity', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Lower threshold = easier to trigger (but more false alarms). '
+            'Test by shaking your phone above.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          Slider(
+            value: s.thresholdG,
+            min: 1.8,
+            max: 3.6,
+            divisions: 18,
+            label: s.thresholdG.toStringAsFixed(1),
+            onChanged: (v) => save(s.copyWith(thresholdG: v)),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text('More sensitive'),
+              Text('Firmer shake'),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Text('Shakes required: ${s.requiredShakes}',
+              style: Theme.of(context).textTheme.titleMedium),
+          Slider(
+            value: s.requiredShakes.toDouble(),
+            min: 2,
+            max: 6,
+            divisions: 4,
+            label: '${s.requiredShakes}',
+            onChanged: (v) => save(s.copyWith(requiredShakes: v.round())),
+          ),
+          const Divider(height: 32),
+
+          Text('When triggered', style: Theme.of(context).textTheme.titleMedium),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Cancel countdown'),
+            subtitle: Text('${s.countdownSeconds} seconds to cancel a false alarm'),
+            trailing: SizedBox(
+              width: 160,
+              child: Slider(
+                value: s.countdownSeconds.toDouble(),
+                min: 0,
+                max: 15,
+                divisions: 15,
+                label: '${s.countdownSeconds}s',
+                onChanged: (v) =>
+                    save(s.copyWith(countdownSeconds: v.round())),
+              ),
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Stealth mode'),
+            subtitle: const Text(
+                'Send instantly with no visible countdown — for when it isn\'t '
+                'safe to show the screen.'),
+            value: s.stealthMode,
+            onChanged: (v) => save(s.copyWith(stealthMode: v)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TestMeter extends StatelessWidget {
+  const _TestMeter(
+      {required this.spikes, required this.needed, required this.fired});
+  final int spikes;
+  final int needed;
+  final bool fired;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: fired
+            ? AppTheme.emergencyRed.withOpacity(0.12)
+            : Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            fired ? 'Would trigger SOS ✓' : 'Test your shake',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: fired ? AppTheme.emergencyRed : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(needed, (i) {
+              final on = i < spikes;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(
+                  on ? Icons.circle : Icons.circle_outlined,
+                  color: on ? AppTheme.emergencyRed : Colors.grey,
+                  size: 28,
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}

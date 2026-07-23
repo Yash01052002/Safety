@@ -8,6 +8,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import 'settings_service.dart';
+
 /// Configures and runs the Android foreground service (and iOS background
 /// handler) that keeps **location streaming** and **shake detection** alive
 /// while the app is backgrounded or the screen is locked.
@@ -75,10 +77,15 @@ void onStart(ServiceInstance service) {
   StreamSubscription<AccelerometerEvent>? accSub;
 
   // ── Shake detection (mirrors ShakeDetector; kept self-contained so the
-  //    isolate has no dependency on the UI tree). ──
+  //    isolate has no dependency on the UI tree). Sensitivity comes from the
+  //    same persisted settings the calibration screen writes. ──
   const gravity = 9.80665;
-  const thresholdG = 2.7;
-  const requiredShakes = 3;
+  var thresholdG = 2.7;
+  var requiredShakes = 3;
+  SettingsService.readRaw().then((s) {
+    thresholdG = s.thresholdG;
+    requiredShakes = s.requiredShakes;
+  });
   final spikeTimes = <DateTime>[];
   DateTime? lastSpike;
   DateTime? firedAt;
