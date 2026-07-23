@@ -21,6 +21,10 @@
 	<string>Suraksha uses motion sensors to detect a shake gesture that triggers an emergency alert.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Suraksha can record audio during an SOS as evidence for your guardians.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Suraksha can capture a photo during an SOS as evidence for your guardians.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Suraksha saves SOS evidence you capture.</string>
 
 	<!-- Background execution modes -->
 	<key>UIBackgroundModes</key>

@@ -18,12 +18,26 @@ class SosSettings {
   /// unsafe.
   final bool stealthMode;
 
+  /// Record short audio evidence on SOS and attach it for guardians.
+  final bool captureAudioOnSos;
+
+  /// Sound a loud siren + strobe the flashlight on SOS (opt-in; the inverse of
+  /// stealth — use to attract attention / deter).
+  final bool sirenOnSos;
+
+  /// Minutes to wait for a guardian acknowledgment before escalating to the
+  /// next-priority contact.
+  final int escalationMinutes;
+
   const SosSettings({
     this.shakeEnabled = true,
     this.thresholdG = 2.7,
     this.requiredShakes = 3,
     this.countdownSeconds = 5,
     this.stealthMode = false,
+    this.captureAudioOnSos = true,
+    this.sirenOnSos = false,
+    this.escalationMinutes = 3,
   });
 
   SosSettings copyWith({
@@ -32,6 +46,9 @@ class SosSettings {
     int? requiredShakes,
     int? countdownSeconds,
     bool? stealthMode,
+    bool? captureAudioOnSos,
+    bool? sirenOnSos,
+    int? escalationMinutes,
   }) {
     return SosSettings(
       shakeEnabled: shakeEnabled ?? this.shakeEnabled,
@@ -39,6 +56,9 @@ class SosSettings {
       requiredShakes: requiredShakes ?? this.requiredShakes,
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
       stealthMode: stealthMode ?? this.stealthMode,
+      captureAudioOnSos: captureAudioOnSos ?? this.captureAudioOnSos,
+      sirenOnSos: sirenOnSos ?? this.sirenOnSos,
+      escalationMinutes: escalationMinutes ?? this.escalationMinutes,
     );
   }
 
@@ -48,6 +68,9 @@ class SosSettings {
         'requiredShakes': requiredShakes,
         'countdownSeconds': countdownSeconds,
         'stealthMode': stealthMode,
+        'captureAudioOnSos': captureAudioOnSos,
+        'sirenOnSos': sirenOnSos,
+        'escalationMinutes': escalationMinutes,
       };
 
   factory SosSettings.fromMap(Map<String, dynamic> map) {
@@ -57,6 +80,9 @@ class SosSettings {
       requiredShakes: (map['requiredShakes'] as num?)?.toInt() ?? 3,
       countdownSeconds: (map['countdownSeconds'] as num?)?.toInt() ?? 5,
       stealthMode: map['stealthMode'] as bool? ?? false,
+      captureAudioOnSos: map['captureAudioOnSos'] as bool? ?? true,
+      sirenOnSos: map['sirenOnSos'] as bool? ?? false,
+      escalationMinutes: (map['escalationMinutes'] as num?)?.toInt() ?? 3,
     );
   }
 }

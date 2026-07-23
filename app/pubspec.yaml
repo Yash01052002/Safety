@@ -36,9 +36,17 @@ dependencies:
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   firebase_messaging: ^14.7.19
+  firebase_storage: ^11.6.9        # SOS media (audio/photo evidence)
+
+  # Media capture + emergency alarm (Phase 4)
+  record: ^5.0.5                   # audio recording on SOS
+  image_picker: ^1.0.7             # photo capture
+  audioplayers: ^6.0.0             # loud siren
+  torch_light: ^1.1.0              # flashlight strobe
 
   # Local persistence / offline queue
   shared_preferences: ^2.2.2
+  path_provider: ^2.1.2
 
   # Trigger fallbacks — home-screen shortcut + deep link that Siri Shortcut /
   # iOS Action Button / Back Tap / lock-screen widgets can invoke.

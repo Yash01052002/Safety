@@ -4,7 +4,7 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 **shake-to-alert SOS**, **live location sharing**, and **trusted-contact alerts**.
 
 > This directory contains the app source and platform config through **Phases
-> 0–3** of the [master plan](../MASTER_PLAN.md). It is designed to be built with
+> 0–4** of the [master plan](../MASTER_PLAN.md). It is designed to be built with
 > the Flutter SDK (not yet installed in this environment).
 
 ## What's implemented so far
@@ -32,20 +32,30 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Shake sensitivity calibration** (live test meter, persisted) | `lib/features/settings/shake_settings_screen.dart` | ✅ Phase 3 |
 | **SOS settings** (threshold, shakes, countdown, stealth) | `lib/core/models/sos_settings.dart`, `lib/core/services/settings_service.dart` | ✅ Phase 3 |
 | **Trigger fallbacks** (Quick Action + `suraksha://sos` deep link) | `lib/core/services/quick_trigger_service.dart` | ✅ Phase 3 |
+| **Media evidence** (audio/photo → Firebase Storage) | `lib/core/services/media_service.dart` | ✅ Phase 4 |
+| **Siren + flashlight strobe** (opt-in) | `lib/core/services/alarm_service.dart` | ✅ Phase 4 |
+| **Guardian acknowledgment** ("on my way" / "call police") | `lib/features/live/guardian_map_screen.dart`, `lib/core/models/ack.dart` | ✅ Phase 4 |
+| **Escalation ladder** (unanswered SOS → next tier) | `functions/index.js` (`escalateUnacknowledged`) | ✅ Phase 4 |
+| **Ack notification back to the user** | `functions/index.js` (`onAckCreated`) | ✅ Phase 4 |
+| **Storage security rules** | `storage.rules` | ✅ Phase 4 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
 
 ## Not yet done (next steps)
 
-- **Phases 0–3 are complete.** Remaining work begins at Phase 4.
+- **Phases 0–4 are complete.** Remaining work is Phase 5 (hardening) and Phase 6.
 - **Firebase-in-isolate writes** (Phase 2 hardening): the background isolate
   currently forwards `position`/`shake` to the UI isolate, which stays alive
   under the foreground service. For writes while the app is *fully killed*,
   initialize Firebase inside `onStart` and write directly. Stub is in place.
-- **Escalation ladder + media capture** (Phase 4) — `escalateUnacknowledged`
-  is stubbed in `functions/index.js`.
-- Google Maps API key setup for `google_maps_flutter` (Android + iOS).
+- **Phase 5 hardening**: end-to-end encryption of location/media; replace the
+  capability-URL track id with a random share token + expiry; tighten the
+  `acks` read rule to actual recipients; region-specific emergency numbers
+  (the guardian "Call police" currently dials `112` — make it locale-aware);
+  pen-test; accessibility + battery/device-matrix testing; store submission.
+- The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
+  Google Maps needs an API key (Android + iOS).
 
 ## iOS trigger fallbacks (Phase 3)
 

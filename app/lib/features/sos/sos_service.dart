@@ -5,9 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/models/ack.dart';
 import '../../core/models/sos_event.dart';
+import '../../core/models/sos_settings.dart';
 import '../../core/models/trusted_contact.dart';
+import '../../core/services/alarm_service.dart';
 import '../../core/services/location_service.dart';
+import '../../core/services/media_service.dart';
 
 /// Orchestrates an SOS: capture location + battery, build the alert, deliver to
 /// guardians via app push (backend) with an SMS fallback, and start live share.
@@ -23,6 +27,15 @@ abstract class AlertGateway {
 
   /// Mark an event resolved/cancelled.
   Future<void> updateStatus(String eventId, SosStatus status);
+
+  /// Attach an uploaded media URL (audio/photo evidence) to an event.
+  Future<void> attachMedia(String eventId, String type, String url);
+
+  /// Stream guardian acknowledgments for an event (shown to the user).
+  Stream<List<Ack>> watchAcks(String eventId);
+
+  /// Record a guardian's response to an event (guardian side).
+  Future<void> acknowledge(String eventId, Ack ack);
 }
 
 class SosController extends ChangeNotifier {
@@ -30,18 +43,33 @@ class SosController extends ChangeNotifier {
     required this.gateway,
     required this.locationService,
     required this.currentUserId,
-  });
+    this.settings = const SosSettings(),
+    MediaService? mediaService,
+    AlarmService? alarmService,
+  })  : mediaService = mediaService ?? MediaService(),
+        alarmService = alarmService ?? AlarmService();
 
   final AlertGateway gateway;
   final LocationService locationService;
   final String currentUserId;
+  final MediaService mediaService;
+  final AlarmService alarmService;
+
+  /// Latest settings; updated by the UI so a triggered SOS uses current prefs.
+  SosSettings settings;
+
   final Battery _battery = Battery();
 
   SosEvent? _active;
   SosEvent? get active => _active;
   bool get isActive => _active?.status == SosStatus.active;
 
+  /// Guardian acknowledgments for the active event, newest first.
+  List<Ack> _acks = const [];
+  List<Ack> get acks => _acks;
+
   StreamSubscription<Position>? _liveSub;
+  StreamSubscription<List<Ack>>? _ackSub;
 
   /// A pending countdown so the user can cancel a false alarm.
   Timer? _countdown;
@@ -101,6 +129,7 @@ class SosController extends ChangeNotifier {
       lat: pos?.latitude,
       lng: pos?.longitude,
       batteryPct: battery,
+      escalationMinutes: settings.escalationMinutes,
     );
 
     String eventId;
@@ -123,9 +152,40 @@ class SosController extends ChangeNotifier {
       lng: event.lng,
       batteryPct: event.batteryPct,
     );
+    _acks = const [];
     notifyListeners();
 
     _startLiveShare(eventId);
+    _watchAcks(eventId);
+
+    // Loud response (opt-in) — never in stealth mode.
+    if (settings.sirenOnSos && !settings.stealthMode) {
+      alarmService.start();
+    }
+
+    // Best-effort audio evidence; runs after the alert is already out so it
+    // never delays delivery.
+    if (settings.captureAudioOnSos) {
+      _captureEvidence(eventId);
+    }
+  }
+
+  void _watchAcks(String eventId) {
+    _ackSub?.cancel();
+    _ackSub = gateway.watchAcks(eventId).listen((list) {
+      _acks = list;
+      notifyListeners();
+    });
+  }
+
+  Future<void> _captureEvidence(String eventId) async {
+    final url = await mediaService.recordAndUploadAudio(
+      userId: currentUserId,
+      eventId: eventId,
+    );
+    if (url != null) {
+      await gateway.attachMedia(eventId, 'audio', url);
+    }
   }
 
   void _startLiveShare(String eventId) {
@@ -158,10 +218,14 @@ class SosController extends ChangeNotifier {
     if (e == null) return;
     _liveSub?.cancel();
     _liveSub = null;
+    _ackSub?.cancel();
+    _ackSub = null;
+    await alarmService.stop();
     try {
       await gateway.updateStatus(e.id, SosStatus.resolved);
     } catch (_) {}
     _active = null;
+    _acks = const [];
     notifyListeners();
   }
 
@@ -177,6 +241,8 @@ class SosController extends ChangeNotifier {
   void dispose() {
     _countdown?.cancel();
     _liveSub?.cancel();
+    _ackSub?.cancel();
+    alarmService.dispose();
     super.dispose();
   }
 }
