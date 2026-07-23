@@ -1,0 +1,63 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/repositories/contacts_repository.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/services/firestore_alert_gateway.dart';
+import '../../core/services/location_service.dart';
+import '../../features/home/home_screen.dart';
+import '../../features/sos/sos_service.dart';
+import 'login_screen.dart';
+
+/// Routes between the login screen and the authenticated app based on Firebase
+/// auth state, and provides per-user services (SOS controller, contacts repo)
+/// once signed in.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key, required this.auth});
+
+  final AuthService auth;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: auth.authState(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final user = snap.data;
+        if (user == null) {
+          return LoginScreen(auth: auth);
+        }
+        return _AuthedScope(userId: user.uid);
+      },
+    );
+  }
+}
+
+class _AuthedScope extends StatelessWidget {
+  const _AuthedScope({required this.userId});
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<ContactsRepository>(
+          create: (_) => ContactsRepository(userId: userId),
+        ),
+        ChangeNotifierProvider<SosController>(
+          create: (_) => SosController(
+            gateway: FirestoreAlertGateway(),
+            locationService: LocationService(),
+            currentUserId: userId,
+          ),
+        ),
+      ],
+      child: const HomeScreen(),
+    );
+  }
+}
