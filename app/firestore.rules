@@ -31,6 +31,15 @@ service cloud.firestore {
       }
     }
 
+    // Proactive live-share sessions — private to their owner. The guardian-
+    // visible data lives in publicTracks below.
+    match /liveSessions/{sessionId} {
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow read, update: if request.auth != null
+                          && resource.data.userId == request.auth.uid;
+    }
+
     // Public, capability-URL-scoped live track read by the guardian web page.
     // The document id is the opaque event link; anyone holding it can read the
     // minimal location projection. Writes come only from the event's author

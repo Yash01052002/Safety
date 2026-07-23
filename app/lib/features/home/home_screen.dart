@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/models/sos_event.dart';
 import '../../core/models/trusted_contact.dart';
 import '../../core/repositories/contacts_repository.dart';
+import '../../core/services/background_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../contacts/contacts_screen.dart';
+import '../live/live_share_card.dart';
 import '../sos/shake_detector.dart';
 import '../sos/sos_button.dart';
 import '../sos/sos_service.dart';
@@ -27,6 +32,10 @@ class _HomeScreenState extends State<HomeScreen> {
     TrustedContact(id: '1', name: 'Mom', phone: '+10000000000', priority: 0),
   ];
 
+  StreamSubscription? _bgShakeSub;
+  StreamSubscription? _contactsSub;
+  bool _contactsBound = false;
+
   ContactsRepository? get _repo {
     // Optional: absent in dev mode (no Firebase / no provider registered).
     try {
@@ -40,15 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _shake = ShakeDetector(onShake: _onShake);
-    if (_shakeEnabled) _shake.start();
+    if (_shakeEnabled) _enableProtection();
+
+    // Shakes detected by the background isolate (screen locked / app backgrounded)
+    // arrive here so the full SOS flow (auth + gateway) can run.
+    _bgShakeSub =
+        FlutterBackgroundService().on('shake').listen((_) => _onShake());
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final repo = _repo;
-    if (repo != null) {
-      repo.watch().listen((list) {
+    if (repo != null && !_contactsBound) {
+      _contactsBound = true;
+      _contactsSub = repo.watch().listen((list) {
         if (mounted) setState(() => _contacts = list);
       });
     }
@@ -60,9 +75,25 @@ class _HomeScreenState extends State<HomeScreen> {
     sos.trigger(SosTrigger.shake, _contacts, countdownSeconds: 5);
   }
 
+  Future<void> _enableProtection() async {
+    _shake.start();
+    // Keep the process alive with a foreground service so shake + location
+    // continue with the screen locked.
+    try {
+      await SafetyBackgroundService.startProtection();
+    } catch (_) {}
+  }
+
+  void _disableProtection() {
+    _shake.stop();
+    SafetyBackgroundService.stopProtection();
+  }
+
   @override
   void dispose() {
     _shake.stop();
+    _bgShakeSub?.cancel();
+    _contactsSub?.cancel();
     super.dispose();
   }
 
@@ -81,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: _shakeEnabled,
                 onChanged: (v) {
                   setState(() => _shakeEnabled = v);
-                  v ? _shake.start() : _shake.stop();
+                  v ? _enableProtection() : _disableProtection();
                 },
               ),
             ],
@@ -133,6 +164,8 @@ class _IdleView extends StatelessWidget {
         const SizedBox(height: 16),
         Text('${contacts.length} trusted contact(s) configured',
             style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 24),
+        const LiveShareCard(),
       ],
     );
   }

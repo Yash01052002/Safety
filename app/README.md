@@ -3,8 +3,8 @@
 Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 **shake-to-alert SOS**, **live location sharing**, and **trusted-contact alerts**.
 
-> This directory contains the app source and platform config through **Phase 0
-> and most of Phase 1** of the [master plan](../MASTER_PLAN.md). It is designed
+> This directory contains the app source and platform config through **Phase 0,
+> Phase 1, and Phase 2** of the [master plan](../MASTER_PLAN.md). It is designed
 > to be built with the Flutter SDK (not yet installed in this environment).
 
 ## What's implemented so far
@@ -26,20 +26,25 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Guardian web live-track page** (no login, Leaflet map, realtime) | `web_track/index.html` | ✅ Phase 1 |
 | **Guardian push handling** (tap SOS → open live map) | `lib/core/services/push_service.dart` | ✅ Phase 1 |
 | **Firestore security rules** | `firestore.rules` | ✅ Phase 1 |
+| **Background foreground-service** (location + shake, screen locked) | `lib/core/services/background_service.dart` | ✅ Phase 2 |
+| **Proactive live-share** (duration picker, auto-expiry, battery-aware) | `lib/features/live/`, `lib/core/repositories/live_share_repository.dart` | ✅ Phase 2 |
+| **In-app guardian live map** (Google Maps) | `lib/features/live/guardian_map_screen.dart` | ✅ Phase 2 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
 
 ## Not yet done (next steps)
 
-- **Phase 1 is complete.** Remaining work begins at Phase 2.
-- **Background foreground-service integration** (Phase 2): move the shake
-  listener + location stream into `flutter_background_service` so they run with
-  the screen locked.
-- **Guardian live map** view (Phase 2).
+- **Phases 0–2 are complete.** Remaining work begins at Phase 3.
+- **Firebase-in-isolate writes** (Phase 2 hardening): the background isolate
+  currently forwards `position`/`shake` to the UI isolate, which stays alive
+  under the foreground service. For writes while the app is *fully killed*,
+  initialize Firebase inside `onStart` and write directly. Stub is in place.
+- **Shake-to-alert polish** (Phase 3): sensitivity calibration screen; iOS
+  Action Button / Back Tap / Siri Shortcut fallbacks for when the app is killed.
 - **Escalation ladder + media capture** (Phase 4) — `escalateUnacknowledged`
   is stubbed in `functions/index.js`.
-- iOS shake-when-killed workarounds: Action Button / Back Tap / Siri Shortcut.
+- Google Maps API key setup for `google_maps_flutter` (Android + iOS).
 
 ## Backend setup (Firebase)
 

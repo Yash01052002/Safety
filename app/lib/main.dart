@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
 import 'core/services/auth_service.dart';
+import 'core/services/background_service.dart';
 import 'core/services/console_alert_gateway.dart';
 import 'core/services/location_service.dart';
 import 'core/theme/app_theme.dart';
@@ -24,6 +25,14 @@ Future<void> main() async {
     firebaseReady = true;
   } catch (e) {
     debugPrint('Firebase not configured — running in dev mode. ($e)');
+  }
+
+  // Configure the foreground/background service (does not auto-start; the home
+  // screen starts it when protection / live sharing is enabled).
+  try {
+    await SafetyBackgroundService.initialize();
+  } catch (e) {
+    debugPrint('Background service unavailable: $e');
   }
 
   runApp(SurakshaApp(firebaseReady: firebaseReady));
