@@ -53,6 +53,11 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="suraksha" android:host="sos" />
             </intent-filter>
+
+            <!-- Static launcher long-press shortcut + Assistant/App Actions -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Background service for shake detection + live location -->

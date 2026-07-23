@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static app shortcut: long-press the launcher icon → "Send SOS". Also makes
+     the SOS action discoverable to Google Assistant / App Actions. Fires the
+     suraksha://sos deep link handled by QuickTriggerService. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="send_sos"
+        android:enabled="true"
+        android:shortcutShortLabel="@string/sos_short_label"
+        android:shortcutLongLabel="@string/sos_long_label">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="suraksha://sos" />
+    </shortcut>
+</shortcuts>
