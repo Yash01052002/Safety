@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../models/ack.dart';
 import '../models/sos_event.dart';
 import '../models/trusted_contact.dart';
 import '../../features/sos/sos_service.dart';
@@ -79,6 +80,42 @@ class FirestoreAlertGateway implements AlertGateway {
     await _publicTrack(eventId).set({
       'status': status.name,
       'endedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> attachMedia(String eventId, String type, String url) async {
+    await _events.doc(eventId).collection('media').add({
+      'type': type,
+      'url': url,
+      'ts': FieldValue.serverTimestamp(),
+    });
+    // Mirror to the public track so guardians can open the evidence.
+    await _publicTrack(eventId).set({
+      'media': FieldValue.arrayUnion([
+        {'type': type, 'url': url}
+      ]),
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Stream<List<Ack>> watchAcks(String eventId) {
+    return _events
+        .doc(eventId)
+        .collection('acks')
+        .orderBy('at', descending: true)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => Ack.fromMap(d.id, d.data())).toList());
+  }
+
+  @override
+  Future<void> acknowledge(String eventId, Ack ack) async {
+    await _events.doc(eventId).collection('acks').add(ack.toMap());
+    // Surface the latest response on the public track so the web page and the
+    // person in distress can see help is coming.
+    await _publicTrack(eventId).set({
+      'lastAck': ack.toMap(),
     }, SetOptions(merge: true));
   }
 }
