@@ -28,7 +28,11 @@ ios/Flutter/flutter_export_environment.sh
 # Firebase (secrets — do NOT commit)
 google-services.json
 GoogleService-Info.plist
+lib/firebase_options.dart
 .env
+functions/node_modules/
+.firebase/
+firebase-debug.log
 
 # OS
 .DS_Store
