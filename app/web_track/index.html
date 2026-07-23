@@ -92,11 +92,18 @@
         const d = snap.data();
         const name = d.userName || "Someone";
         const active = d.status === "active";
+        const isSos = (d.kind || "sos") === "sos";
 
         banner.classList.toggle("safe", !active);
-        bannerText.innerHTML = active
-          ? `<strong>${name}</strong> needs help — live location`
-          : `<strong>${name}</strong> marked themselves safe`;
+        if (active) {
+          bannerText.innerHTML = isSos
+            ? `<strong>${name}</strong> needs help — live location`
+            : `<strong>${name}</strong> is sharing their live location`;
+        } else {
+          bannerText.innerHTML = isSos
+            ? `<strong>${name}</strong> marked themselves safe`
+            : `<strong>${name}</strong> stopped sharing`;
+        }
 
         if (d.lat != null && d.lng != null) {
           const pos = [d.lat, d.lng];

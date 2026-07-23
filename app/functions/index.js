@@ -39,6 +39,7 @@ exports.onSosCreated = functions.firestore
     // Seed the public, link-scoped track document the guardian web page reads.
     // Only non-sensitive fields — never the recipient list or user id.
     await db.collection("publicTracks").doc(eventId).set({
+      kind: "sos",
       userName,
       status: "active",
       lat: event.lat != null ? event.lat : null,
