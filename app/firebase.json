@@ -6,6 +6,13 @@
     "source": "functions",
     "runtime": "nodejs20"
   },
+  "hosting": {
+    "public": "web_track",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/e/**", "destination": "/index.html" }
+    ]
+  },
   "emulators": {
     "auth": { "port": 9099 },
     "functions": { "port": 5001 },

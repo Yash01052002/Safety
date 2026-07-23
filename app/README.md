@@ -23,6 +23,8 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Contacts UI (phonebook pick, manual add, priority reorder)** | `lib/features/contacts/contacts_screen.dart` | ✅ Phase 1 |
 | **Firestore alert gateway** (writes event → triggers fan-out) | `lib/core/services/firestore_alert_gateway.dart` | ✅ Phase 1 |
 | **Cloud Function: FCM push + Twilio SMS fan-out** | `functions/index.js` | ✅ Phase 1 |
+| **Guardian web live-track page** (no login, Leaflet map, realtime) | `web_track/index.html` | ✅ Phase 1 |
+| **Guardian push handling** (tap SOS → open live map) | `lib/core/services/push_service.dart` | ✅ Phase 1 |
 | **Firestore security rules** | `firestore.rules` | ✅ Phase 1 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
@@ -30,8 +32,7 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 
 ## Not yet done (next steps)
 
-- **Finish Phase 1:** web live-track page for guardians without the app;
-  guardian-side push handling that opens the live map.
+- **Phase 1 is complete.** Remaining work begins at Phase 2.
 - **Background foreground-service integration** (Phase 2): move the shake
   listener + location stream into `flutter_background_service` so they run with
   the screen locked.
@@ -54,8 +55,13 @@ firebase functions:config:set \
   twilio.sid=ACxxxx twilio.token=xxxx twilio.from="+1..." \
   app.trackbase="https://track.yourdomain.app"
 
-firebase deploy --only functions,firestore:rules
+firebase deploy --only functions,firestore:rules,hosting
 ```
+
+Then set `app.trackbase` to your Hosting URL and paste your **web** Firebase
+config into `web_track/index.html` (the `firebaseConfig` placeholders) so the
+guardian track page can read live location. The link format is
+`https://<trackbase>/e/<eventId>`.
 
 Without this config the app runs in **dev mode** (console gateway) so the
 SOS / shake / live-share UI still works on a device with no backend.

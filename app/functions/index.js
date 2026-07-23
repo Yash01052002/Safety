@@ -36,6 +36,17 @@ exports.onSosCreated = functions.firestore
     const userDoc = await db.collection("users").doc(event.userId).get();
     const userName = userDoc.exists ? userDoc.data().name : "Someone";
 
+    // Seed the public, link-scoped track document the guardian web page reads.
+    // Only non-sensitive fields — never the recipient list or user id.
+    await db.collection("publicTracks").doc(eventId).set({
+      userName,
+      status: "active",
+      lat: event.lat != null ? event.lat : null,
+      lng: event.lng != null ? event.lng : null,
+      startedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
     const trackUrl = `${TRACK_BASE}/e/${eventId}`;
     const mapUrl =
       event.lat != null && event.lng != null
