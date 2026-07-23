@@ -44,7 +44,8 @@ class ConsoleAlertGateway implements AlertGateway {
   }
 
   @override
-  Stream<List<Ack>> watchAcks(String eventId) => Stream.value(const []);
+  Stream<List<Ack>> watchAcks(String eventId) =>
+      Stream.value(const <Ack>[]);
 
   @override
   Future<void> acknowledge(String eventId, Ack ack) async {
