@@ -48,6 +48,7 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Accessibility on SOS button** | `lib/features/sos/sos_button.dart` | ✅ Phase 5 |
 | **Journey monitoring** (ETA timer → auto-SOS if overdue) | `lib/features/journey/` | ✅ Phase 6 |
 | **Android App Shortcut / Assistant** (long-press → Send SOS) | `android/.../res/xml/shortcuts.xml` | ✅ Phase 6 |
+| **Community safety map** (pseudonymous area reports, radius query) | `lib/features/community/`, `lib/core/repositories/safety_report_repository.dart` | ✅ Phase 6 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
@@ -66,8 +67,11 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 - The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
   Google Maps needs an API key (Android + iOS).
 - **Phase 6 (remaining):** wearables (Apple Watch / Wear OS), always-listening
-  voice trigger, home-screen widgets, and community safe-zone features — the
-  journey-monitoring enhancement is done; the rest need native modules.
+  voice trigger, and home-screen widgets — these need native modules. Journey
+  monitoring and the community safety map are done.
+- **Community map scaling:** the `nearby` query bounds by latitude and filters
+  distance client-side (fine for a viewport radius). Move to geohash querying
+  and add server-side moderation/rate-limiting before large-scale rollout.
 
 ## iOS trigger fallbacks (Phase 3)
 

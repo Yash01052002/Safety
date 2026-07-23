@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/repositories/contacts_repository.dart';
 import '../../core/repositories/live_share_repository.dart';
+import '../../core/repositories/safety_report_repository.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/firestore_alert_gateway.dart';
 import '../../core/services/location_service.dart';
@@ -66,6 +67,9 @@ class _AuthedScopeState extends State<_AuthedScope> {
       providers: [
         Provider<ContactsRepository>(
           create: (_) => ContactsRepository(userId: userId),
+        ),
+        Provider<SafetyReportRepository>(
+          create: (_) => SafetyReportRepository(userId: userId),
         ),
         ChangeNotifierProvider<SosController>(
           create: (_) => SosController(

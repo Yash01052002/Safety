@@ -55,6 +55,17 @@ service cloud.firestore {
                           && resource.data.userId == request.auth.uid;
     }
 
+    // Community safety reports: any signed-in user can read the map and add
+    // their own pseudonymous report. Reports are immutable once created;
+    // moderation/removal happens server-side (admin). reporterId must be the
+    // author so abuse can be traced without exposing identity to other users.
+    match /safetyReports/{reportId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.reporterId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // Public, capability-URL-scoped live track read by the guardian web page.
     // The document id is the opaque event link; anyone holding it can read the
     // minimal location projection — but only until it expires, so a leaked URL
