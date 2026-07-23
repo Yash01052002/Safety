@@ -9,6 +9,7 @@ import '../../core/services/firestore_alert_gateway.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/push_service.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/journey/journey_controller.dart';
 import '../../features/live/live_share_controller.dart';
 import '../../features/sos/sos_service.dart';
 import 'login_screen.dart';
@@ -78,6 +79,9 @@ class _AuthedScopeState extends State<_AuthedScope> {
             repo: LiveShareRepository(userId: userId),
             locationService: locationService,
           ),
+        ),
+        ChangeNotifierProvider<JourneyController>(
+          create: (_) => JourneyController(),
         ),
       ],
       child: const HomeScreen(),

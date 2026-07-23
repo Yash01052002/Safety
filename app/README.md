@@ -46,6 +46,8 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Privacy & data-controls screen** | `lib/features/privacy/privacy_screen.dart` | ✅ Phase 5 |
 | **Localization scaffolding** (en + hi) | `l10n.yaml`, `lib/l10n/*.arb` | ✅ Phase 5 |
 | **Accessibility on SOS button** | `lib/features/sos/sos_button.dart` | ✅ Phase 5 |
+| **Journey monitoring** (ETA timer → auto-SOS if overdue) | `lib/features/journey/` | ✅ Phase 6 |
+| **Android App Shortcut / Assistant** (long-press → Send SOS) | `android/.../res/xml/shortcuts.xml` | ✅ Phase 6 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
@@ -63,7 +65,9 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
   add `AppLocalizations.delegate` and migrate hardcoded strings to `.arb` keys.
 - The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
   Google Maps needs an API key (Android + iOS).
-- **Phase 6:** wearables, voice trigger, widgets, community features.
+- **Phase 6 (remaining):** wearables (Apple Watch / Wear OS), always-listening
+  voice trigger, home-screen widgets, and community safe-zone features — the
+  journey-monitoring enhancement is done; the rest need native modules.
 
 ## iOS trigger fallbacks (Phase 3)
 

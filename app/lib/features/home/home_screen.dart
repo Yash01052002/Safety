@@ -12,6 +12,8 @@ import '../../core/services/quick_trigger_service.dart';
 import '../../core/services/settings_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../contacts/contacts_screen.dart';
+import '../journey/journey_card.dart';
+import '../journey/journey_controller.dart';
 import '../live/live_share_card.dart';
 import '../privacy/privacy_screen.dart';
 import '../settings/shake_settings_screen.dart';
@@ -92,6 +94,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _shake.configure(thresholdG: s.thresholdG, requiredShakes: s.requiredShakes);
     // A triggered SOS should use the latest media/siren/countdown prefs.
     context.read<SosController>().settings = s;
+
+    // Wire an overdue journey to fire an SOS. Optional (dev mode has none).
+    try {
+      Provider.of<JourneyController>(context, listen: false).onOverdue =
+          _onJourneyOverdue;
+    } on ProviderNotFoundException {
+      /* no journey controller in dev mode */
+    }
   }
 
   void _onShake() {
@@ -104,6 +114,16 @@ class _HomeScreenState extends State<HomeScreen> {
       silent: s.stealthMode,
       countdownSeconds: s.countdownSeconds,
     );
+  }
+
+  /// A monitored journey went overdue with no check-in — the user may be unable
+  /// to reach their phone, so fire immediately with no cancellable countdown.
+  void _onJourneyOverdue() {
+    context.read<SosController>().trigger(
+          SosTrigger.manual,
+          _contacts,
+          silent: true,
+        );
   }
 
   Future<void> _enableProtection() async {
@@ -214,6 +234,8 @@ class _IdleView extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 24),
         const LiveShareCard(),
+        const SizedBox(height: 12),
+        const JourneyCard(),
       ],
     );
   }
