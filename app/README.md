@@ -3,9 +3,9 @@
 Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 **shake-to-alert SOS**, **live location sharing**, and **trusted-contact alerts**.
 
-> This directory contains the app source and platform config through **Phase 0,
-> Phase 1, and Phase 2** of the [master plan](../MASTER_PLAN.md). It is designed
-> to be built with the Flutter SDK (not yet installed in this environment).
+> This directory contains the app source and platform config through **Phases
+> 0–3** of the [master plan](../MASTER_PLAN.md). It is designed to be built with
+> the Flutter SDK (not yet installed in this environment).
 
 ## What's implemented so far
 
@@ -29,22 +29,32 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Background foreground-service** (location + shake, screen locked) | `lib/core/services/background_service.dart` | ✅ Phase 2 |
 | **Proactive live-share** (duration picker, auto-expiry, battery-aware) | `lib/features/live/`, `lib/core/repositories/live_share_repository.dart` | ✅ Phase 2 |
 | **In-app guardian live map** (Google Maps) | `lib/features/live/guardian_map_screen.dart` | ✅ Phase 2 |
+| **Shake sensitivity calibration** (live test meter, persisted) | `lib/features/settings/shake_settings_screen.dart` | ✅ Phase 3 |
+| **SOS settings** (threshold, shakes, countdown, stealth) | `lib/core/models/sos_settings.dart`, `lib/core/services/settings_service.dart` | ✅ Phase 3 |
+| **Trigger fallbacks** (Quick Action + `suraksha://sos` deep link) | `lib/core/services/quick_trigger_service.dart` | ✅ Phase 3 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
 
 ## Not yet done (next steps)
 
-- **Phases 0–2 are complete.** Remaining work begins at Phase 3.
+- **Phases 0–3 are complete.** Remaining work begins at Phase 4.
 - **Firebase-in-isolate writes** (Phase 2 hardening): the background isolate
   currently forwards `position`/`shake` to the UI isolate, which stays alive
   under the foreground service. For writes while the app is *fully killed*,
   initialize Firebase inside `onStart` and write directly. Stub is in place.
-- **Shake-to-alert polish** (Phase 3): sensitivity calibration screen; iOS
-  Action Button / Back Tap / Siri Shortcut fallbacks for when the app is killed.
 - **Escalation ladder + media capture** (Phase 4) — `escalateUnacknowledged`
   is stubbed in `functions/index.js`.
 - Google Maps API key setup for `google_maps_flutter` (Android + iOS).
+
+## iOS trigger fallbacks (Phase 3)
+
+Because iOS can't reliably run shake detection when the app is force-quit, the
+app exposes `suraksha://sos`. Users bind it once via the **Shortcuts** app
+("Open URL" → `suraksha://sos`) and assign that Shortcut to the **Action Button**
+(iPhone 15 Pro+), **Back Tap** (Settings → Accessibility → Touch), a
+**lock-screen / Control Center widget**, or **"Hey Siri, send SOS"**. The
+home-screen long-press **Quick Action** works on both platforms.
 
 ## Backend setup (Firebase)
 
