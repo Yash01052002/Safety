@@ -16,6 +16,10 @@ class SosEvent {
   final double? lng;
   final int? batteryPct;
 
+  /// Minutes to wait for an acknowledgment before the backend escalates to the
+  /// next-priority contact. Captured from settings at trigger time.
+  final int? escalationMinutes;
+
   const SosEvent({
     required this.id,
     required this.userId,
@@ -26,6 +30,7 @@ class SosEvent {
     this.lat,
     this.lng,
     this.batteryPct,
+    this.escalationMinutes,
   });
 
   factory SosEvent.fromMap(String id, Map<String, dynamic> map) {
@@ -48,6 +53,7 @@ class SosEvent {
       lat: (map['lat'] as num?)?.toDouble(),
       lng: (map['lng'] as num?)?.toDouble(),
       batteryPct: (map['batteryPct'] as num?)?.toInt(),
+      escalationMinutes: (map['escalationMinutes'] as num?)?.toInt(),
     );
   }
 
@@ -60,5 +66,6 @@ class SosEvent {
         'lat': lat,
         'lng': lng,
         'batteryPct': batteryPct,
+        'escalationMinutes': escalationMinutes,
       };
 }

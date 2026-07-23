@@ -89,6 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // changes (didChangeDependencies is the correct place for that).
     final s = Provider.of<SettingsService>(context).settings;
     _shake.configure(thresholdG: s.thresholdG, requiredShakes: s.requiredShakes);
+    // A triggered SOS should use the latest media/siren/countdown prefs.
+    context.read<SosController>().settings = s;
   }
 
   void _onShake() {
@@ -241,7 +243,8 @@ class _ActiveView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sos = context.read<SosController>();
+    // Watch so acknowledgments stream in live.
+    final sos = context.watch<SosController>();
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -261,7 +264,32 @@ class _ActiveView extends StatelessWidget {
           Text('Last: ${event.lat!.toStringAsFixed(4)}, '
               '${event.lng!.toStringAsFixed(4)}'),
         ],
-        const SizedBox(height: 32),
+
+        // Guardian responses as they come in.
+        if (sos.acks.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          for (final ack in sos.acks.take(3))
+            Card(
+              color: AppTheme.safeGreen.withOpacity(0.12),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(Icons.check_circle, color: AppTheme.safeGreen),
+                title: Text('${ack.guardianName}: ${ack.response.label}'),
+              ),
+            ),
+        ],
+
+        // Manual siren control while active.
+        if (sos.alarmService.isActive) ...[
+          const SizedBox(height: 12),
+          TextButton.icon(
+            icon: const Icon(Icons.volume_off),
+            label: const Text('Silence siren'),
+            onPressed: () => sos.alarmService.stop(),
+          ),
+        ],
+
+        const SizedBox(height: 24),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: AppTheme.safeGreen),
           onPressed: sos.resolve,

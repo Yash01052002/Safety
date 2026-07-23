@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../models/ack.dart';
 import '../models/sos_event.dart';
 import '../models/trusted_contact.dart';
 import '../../features/sos/sos_service.dart';
@@ -35,5 +36,18 @@ class ConsoleAlertGateway implements AlertGateway {
   @override
   Future<void> updateStatus(String eventId, SosStatus status) async {
     debugPrint('[$eventId] status → ${status.name}');
+  }
+
+  @override
+  Future<void> attachMedia(String eventId, String type, String url) async {
+    debugPrint('[$eventId] media ($type) → $url');
+  }
+
+  @override
+  Stream<List<Ack>> watchAcks(String eventId) => Stream.value(const []);
+
+  @override
+  Future<void> acknowledge(String eventId, Ack ack) async {
+    debugPrint('[$eventId] ack: ${ack.guardianName} → ${ack.response.label}');
   }
 }

@@ -98,13 +98,83 @@ async function pushToGuardian(phone, fromName, eventId, trackUrl) {
 }
 
 /**
- * Escalation: if an active event hasn't been acknowledged after a grace period,
- * this scheduled function can notify the next tier. (Phase 4 — stub.)
+ * Escalation ladder: every minute, find active SOS events that are past their
+ * per-event grace period with no acknowledgment, and notify the next-priority
+ * contact who hasn't been escalated to yet. Marks progress on the event so each
+ * tier is only paged once.
  */
 exports.escalateUnacknowledged = functions.pubsub
-  .schedule("every 2 minutes")
+  .schedule("every 1 minutes")
   .onRun(async () => {
-    // TODO Phase 4: query active, unacknowledged events older than N minutes
-    // and notify the next-priority contact / suggest emergency services.
+    const now = Date.now();
+    const active = await db
+      .collection("sosEvents")
+      .where("status", "==", "active")
+      .get();
+
+    for (const doc of active.docs) {
+      const e = doc.data();
+      const started = Date.parse(e.startedAt || "") || now;
+      const graceMs = ((e.escalationMinutes || 3) * 60 + 60) * 1000;
+      if (now - started < graceMs) continue;
+
+      // Already acknowledged? Then no escalation needed.
+      const acks = await doc.ref.collection("acks").limit(1).get();
+      if (!acks.empty) continue;
+
+      const recipients = (e.recipients || [])
+        .slice()
+        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+      const tier = e.escalatedTier || 1; // tier 0 was paged on create
+      const next = recipients[tier];
+      if (!next) continue; // exhausted the ladder
+
+      const userDoc = await db.collection("users").doc(e.userId).get();
+      const userName = userDoc.exists ? userDoc.data().name : "Someone";
+      const trackUrl = `${TRACK_BASE}/e/${doc.id}`;
+      const body =
+        `⚠️ Still no response to ${userName}'s SOS. Please help or call ` +
+        `emergency services. Live location: ${trackUrl}`;
+
+      const twilio = twilioClient();
+      if (next.hasApp) {
+        await pushToGuardian(next.phone, userName, doc.id, trackUrl);
+      } else if (twilio && cfg.twilio && cfg.twilio.from) {
+        await twilio.messages
+          .create({ to: next.phone, from: cfg.twilio.from, body })
+          .catch((err) => console.error("escalation SMS failed", err));
+      }
+
+      await doc.ref.set({ escalatedTier: tier + 1 }, { merge: true });
+      console.log(`Escalated ${doc.id} to tier ${tier + 1} (${next.phone})`);
+    }
     return null;
+  });
+
+/**
+ * When a guardian acknowledges, notify the person in distress so they know help
+ * is coming. Their own push token is on their user doc.
+ */
+exports.onAckCreated = functions.firestore
+  .document("sosEvents/{eventId}/acks/{ackId}")
+  .onCreate(async (snap, context) => {
+    const ack = snap.data();
+    const eventDoc = await db
+      .collection("sosEvents")
+      .doc(context.params.eventId)
+      .get();
+    if (!eventDoc.exists) return;
+
+    const userDoc = await db.collection("users").doc(eventDoc.data().userId).get();
+    const token = userDoc.exists ? userDoc.data().fcmToken : null;
+    if (!token) return;
+
+    return admin.messaging().send({
+      token,
+      notification: {
+        title: "Help is coming",
+        body: `${ack.guardianName}: ${ack.response}`,
+      },
+      android: { priority: "high" },
+    });
   });

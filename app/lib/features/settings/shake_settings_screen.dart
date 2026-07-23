@@ -127,6 +127,45 @@ class _ShakeSettingsScreenState extends State<ShakeSettingsScreen> {
             value: s.stealthMode,
             onChanged: (v) => save(s.copyWith(stealthMode: v)),
           ),
+          const Divider(height: 32),
+
+          Text('During an emergency',
+              style: Theme.of(context).textTheme.titleMedium),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Record audio evidence'),
+            subtitle: const Text(
+                'Capture a short audio clip on SOS and attach it for guardians.'),
+            value: s.captureAudioOnSos,
+            onChanged: (v) => save(s.copyWith(captureAudioOnSos: v)),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Siren + flashlight strobe'),
+            subtitle: const Text(
+                'Draw attention on SOS. Ignored in stealth mode.'),
+            value: s.sirenOnSos,
+            onChanged: (v) => save(s.copyWith(sirenOnSos: v)),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Escalate if unanswered'),
+            subtitle: Text(
+                'Notify the next contact after ${s.escalationMinutes} min '
+                'with no response.'),
+            trailing: SizedBox(
+              width: 160,
+              child: Slider(
+                value: s.escalationMinutes.toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                label: '${s.escalationMinutes} min',
+                onChanged: (v) =>
+                    save(s.copyWith(escalationMinutes: v.round())),
+              ),
+            ),
+          ),
         ],
       ),
     );

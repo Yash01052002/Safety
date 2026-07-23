@@ -29,6 +29,21 @@ service cloud.firestore {
                      && get(/databases/$(database)/documents/sosEvents/$(eventId))
                           .data.userId == request.auth.uid;
       }
+
+      // Media evidence: only the event author writes/reads here; guardians see
+      // media via the public track mirror.
+      match /media/{mediaId} {
+        allow read, write: if request.auth != null
+                           && get(/databases/$(database)/documents/sosEvents/$(eventId))
+                                .data.userId == request.auth.uid;
+      }
+
+      // Acknowledgments: any signed-in guardian may respond; the author and
+      // responders can read. (Phase 5: restrict reads to actual recipients.)
+      match /acks/{ackId} {
+        allow create: if request.auth != null;
+        allow read: if request.auth != null;
+      }
     }
 
     // Proactive live-share sessions — private to their owner. The guardian-
