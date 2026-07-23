@@ -76,10 +76,13 @@ class FirestoreAlertGateway implements AlertGateway {
       'status': status.name,
       'endedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    // Reflect resolution to the web page so it can stop and show "safe".
+    // Reflect resolution to the web page so it can stop and show "safe", and
+    // expire the public link shortly after (brief grace for the final state).
     await _publicTrack(eventId).set({
       'status': status.name,
       'endedAt': FieldValue.serverTimestamp(),
+      'expiresAt':
+          Timestamp.fromDate(DateTime.now().add(const Duration(minutes: 10))),
     }, SetOptions(merge: true));
   }
 

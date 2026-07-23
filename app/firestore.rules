@@ -57,12 +57,13 @@ service cloud.firestore {
 
     // Public, capability-URL-scoped live track read by the guardian web page.
     // The document id is the opaque event link; anyone holding it can read the
-    // minimal location projection. Writes come only from the event's author
-    // (client) or the Cloud Function (admin bypasses rules). This trades a
-    // small amount of link-guessing risk for a zero-friction, no-login page —
-    // Phase 5 hardening can swap the id for a random share token + expiry.
+    // minimal location projection — but only until it expires, so a leaked URL
+    // can't be replayed indefinitely. Writes come only from the event's author
+    // (client) or the Cloud Function (admin bypasses rules).
     match /publicTracks/{eventId} {
-      allow read: if true;
+      allow read: if !('expiresAt' in resource.data)
+                  || resource.data.expiresAt == null
+                  || request.time < resource.data.expiresAt;
       allow create, update: if request.auth != null;
     }
   }

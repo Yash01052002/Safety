@@ -33,12 +33,17 @@ class LiveShareRepository {
     );
     await ref.set(session.toMap());
 
+    // Link expiry (enforced by firestore.rules): the chosen duration, or a 24h
+    // hard cap for "until I stop" so a leaked link can't live forever.
+    final linkExpiry = Timestamp.fromDate(
+      expiresAt ?? now.add(const Duration(hours: 24)),
+    );
     await _db.collection('publicTracks').doc(ref.id).set({
       'kind': 'share',
       'userName': userName,
       'status': 'active',
       'startedAt': FieldValue.serverTimestamp(),
-      'expiresAt': expiresAt?.toIso8601String(),
+      'expiresAt': linkExpiry,
     });
     return session;
   }
@@ -57,8 +62,15 @@ class LiveShareRepository {
       {'active': false, 'endedAt': FieldValue.serverTimestamp()},
       SetOptions(merge: true),
     );
+    // Cut the link off shortly after stopping — a brief grace so guardians
+    // still see the "stopped sharing" state, then the URL stops resolving.
     await _db.collection('publicTracks').doc(sessionId).set(
-      {'status': 'ended', 'endedAt': FieldValue.serverTimestamp()},
+      {
+        'status': 'ended',
+        'endedAt': FieldValue.serverTimestamp(),
+        'expiresAt':
+            Timestamp.fromDate(DateTime.now().add(const Duration(minutes: 10))),
+      },
       SetOptions(merge: true),
     );
   }
