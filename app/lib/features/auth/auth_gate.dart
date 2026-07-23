@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/repositories/contacts_repository.dart';
+import '../../core/repositories/live_share_repository.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/firestore_alert_gateway.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/push_service.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/live/live_share_controller.dart';
 import '../../features/sos/sos_service.dart';
 import 'login_screen.dart';
 
@@ -58,6 +60,7 @@ class _AuthedScopeState extends State<_AuthedScope> {
   @override
   Widget build(BuildContext context) {
     final userId = widget.userId;
+    final locationService = LocationService();
     return MultiProvider(
       providers: [
         Provider<ContactsRepository>(
@@ -66,8 +69,14 @@ class _AuthedScopeState extends State<_AuthedScope> {
         ChangeNotifierProvider<SosController>(
           create: (_) => SosController(
             gateway: FirestoreAlertGateway(),
-            locationService: LocationService(),
+            locationService: locationService,
             currentUserId: userId,
+          ),
+        ),
+        ChangeNotifierProvider<LiveShareController>(
+          create: (_) => LiveShareController(
+            repo: LiveShareRepository(userId: userId),
+            locationService: locationService,
           ),
         ),
       ],
