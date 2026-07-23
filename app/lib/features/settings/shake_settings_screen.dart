@@ -186,7 +186,7 @@ class _TestMeter extends StatelessWidget {
       decoration: BoxDecoration(
         color: fired
             ? AppTheme.emergencyRed.withOpacity(0.12)
-            : Theme.of(context).colorScheme.surfaceVariant,
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
