@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
@@ -63,6 +64,18 @@ class SurakshaApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
+        // Localization. After the first `flutter run` generates AppLocalizations
+        // from lib/l10n/*.arb, add `AppLocalizations.delegate` to this list and
+        // swap hardcoded strings for `AppLocalizations.of(context)!.<key>`.
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('hi'),
+        ],
         home: firebaseReady ? AuthGate(auth: AuthService()) : const _DevHome(),
       ),
     );

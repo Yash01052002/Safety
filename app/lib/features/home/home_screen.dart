@@ -13,6 +13,7 @@ import '../../core/services/settings_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../contacts/contacts_screen.dart';
 import '../live/live_share_card.dart';
+import '../privacy/privacy_screen.dart';
 import '../settings/shake_settings_screen.dart';
 import '../sos/shake_detector.dart';
 import '../sos/sos_button.dart';
@@ -166,6 +167,13 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: 'Shake settings',
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => const ShakeSettingsScreen(),
+            )),
+          ),
+          IconButton(
+            icon: const Icon(Icons.privacy_tip_outlined),
+            tooltip: 'Privacy & data',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const PrivacyScreen(),
             )),
           ),
         ],

@@ -38,11 +38,16 @@ class _SosButtonState extends State<SosButton>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _hold.forward(),
-      onTapUp: (_) => _hold.reset(),
-      onTapCancel: () => _hold.reset(),
-      child: AnimatedBuilder(
+    return Semantics(
+      button: true,
+      label: 'Send SOS',
+      hint: 'Press and hold to alert your guardians',
+      onTap: widget.onTriggered, // lets assistive tech trigger it directly
+      child: GestureDetector(
+        onTapDown: (_) => _hold.forward(),
+        onTapUp: (_) => _hold.reset(),
+        onTapCancel: () => _hold.reset(),
+        child: AnimatedBuilder(
         animation: _hold,
         builder: (context, _) {
           return Container(
@@ -91,6 +96,7 @@ class _SosButtonState extends State<SosButton>
             ),
           );
         },
+        ),
       ),
     );
   }
