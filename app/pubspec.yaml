@@ -1,0 +1,77 @@
+name: suraksha
+description: Women's safety app with live location sharing and shake-to-alert SOS.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # State management
+  provider: ^6.1.2
+
+  # Sensors — shake detection
+  sensors_plus: ^4.0.2
+
+  # Location + background tracking
+  geolocator: ^11.0.0
+  flutter_background_service: ^5.0.5
+  flutter_local_notifications: ^17.0.0
+
+  # Contacts + comms fallback
+  flutter_contacts: ^1.1.7+1
+  url_launcher: ^6.2.5        # tel:/sms: fallbacks
+  permission_handler: ^11.3.0
+
+  # Maps
+  google_maps_flutter: ^2.6.0
+
+  # Backend (Firebase — Phase 0/1). Swap for a custom API behind a repo interface later.
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.8
+  cloud_firestore: ^4.15.8
+  firebase_messaging: ^14.7.19
+  firebase_storage: ^11.6.9        # SOS media (audio/photo evidence)
+  cloud_functions: ^4.6.9          # callable: account/data deletion
+
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+
+  # Media capture + emergency alarm (Phase 4)
+  record: ^5.0.5                   # audio recording on SOS
+  image_picker: ^1.0.7             # photo capture
+  audioplayers: ^6.0.0             # loud siren
+  torch_light: ^1.1.0              # flashlight strobe
+
+  # Local persistence / offline queue
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.2
+
+  # Trigger fallbacks — home-screen shortcut + deep link that Siri Shortcut /
+  # iOS Action Button / Back Tap / lock-screen widgets can invoke.
+  quick_actions: ^1.0.7
+  app_links: ^6.1.1
+
+  # Always-listening wake-word trigger (on-device keyword spotting).
+  # Requires a Picovoice access key + a trained keyword (.ppn) — see
+  # docs/NATIVE_MODULES.md. Opt-in; off by default.
+  porcupine_flutter: ^3.0.3
+
+  # Utils
+  intl: any # pinned by flutter_localizations / gen-l10n to the SDK's version
+  battery_plus: ^5.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  generate: true # runs gen-l10n from lib/l10n/*.arb (see l10n.yaml)
