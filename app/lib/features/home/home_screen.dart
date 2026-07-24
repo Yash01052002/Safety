@@ -11,6 +11,7 @@ import '../../core/repositories/safety_report_repository.dart';
 import '../../core/services/background_service.dart';
 import '../../core/services/quick_trigger_service.dart';
 import '../../core/services/settings_service.dart';
+import '../../core/services/voice_trigger_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../community/community_map_screen.dart';
 import '../contacts/contacts_screen.dart';
@@ -44,6 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription? _contactsSub;
   bool _contactsBound = false;
   late final QuickTriggerService _quickTrigger;
+
+  /// Optional always-listening wake-word trigger. Access key is injected at
+  /// build time (`--dart-define PICOVOICE_ACCESS_KEY=...`); empty = disabled.
+  late final VoiceTriggerService _voice;
+  bool _voiceListening = false;
 
   SettingsService get _settingsService => context.read<SettingsService>();
 
@@ -85,6 +91,22 @@ class _HomeScreenState extends State<HomeScreen> {
     // Shortcut / Action Button / Back Tap) also fire the SOS.
     _quickTrigger = QuickTriggerService(onTrigger: _onShake);
     _quickTrigger.init();
+
+    _voice = VoiceTriggerService(
+      accessKey: const String.fromEnvironment('PICOVOICE_ACCESS_KEY'),
+    );
+    if (s.voiceTriggerEnabled) _syncVoice(true);
+  }
+
+  /// Start/stop the wake-word listener to match the setting (idempotent).
+  Future<void> _syncVoice(bool enabled) async {
+    if (enabled && !_voiceListening && _voice.isConfigured) {
+      final ok = await _voice.start(_onShake);
+      _voiceListening = ok;
+    } else if (!enabled && _voiceListening) {
+      await _voice.stop();
+      _voiceListening = false;
+    }
   }
 
   @override
@@ -104,6 +126,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _shake.configure(thresholdG: s.thresholdG, requiredShakes: s.requiredShakes);
     // A triggered SOS should use the latest media/siren/countdown prefs.
     context.read<SosController>().settings = s;
+    // Match the wake-word listener to the setting.
+    _syncVoice(s.voiceTriggerEnabled);
 
     // Wire an overdue journey to fire an SOS. Optional (dev mode has none).
     try {
@@ -156,6 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _bgShakeSub?.cancel();
     _contactsSub?.cancel();
     _quickTrigger.dispose();
+    _voice.dispose();
     super.dispose();
   }
 

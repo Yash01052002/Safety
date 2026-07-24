@@ -166,9 +166,52 @@ class _ShakeSettingsScreenState extends State<ShakeSettingsScreen> {
               ),
             ),
           ),
+          const Divider(height: 32),
+
+          Text('Voice trigger', style: Theme.of(context).textTheme.titleMedium),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Say a wake word to trigger'),
+            subtitle: const Text(
+                'Listens on-device for a wake word so you can trigger hands-'
+                'free. Recognition happens entirely on your phone — no audio is '
+                'recorded or sent. Uses the microphone and more battery.'),
+            value: s.voiceTriggerEnabled,
+            onChanged: (v) async {
+              if (!v) {
+                save(s.copyWith(voiceTriggerEnabled: false));
+                return;
+              }
+              final ok = await _confirmVoiceConsent();
+              if (ok) save(s.copyWith(voiceTriggerEnabled: true));
+            },
+          ),
         ],
       ),
     );
+  }
+
+  Future<bool> _confirmVoiceConsent() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Turn on voice trigger?'),
+        content: const Text(
+            'To listen for your wake word, the app keeps the microphone active '
+            'and analyses sound on your device. No audio is stored or sent '
+            'anywhere. You can turn this off at any time.\n\n'
+            'This uses extra battery and needs microphone permission.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Enable')),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 }
 

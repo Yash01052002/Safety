@@ -53,6 +53,7 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Android Quick Settings SOS tile** | `android/.../SosTileService.kt` | ✅ Phase 6 (native) |
 | **Wear OS companion** (wrist SOS → phone via message + deep link) | `wear/`, `android/.../SosWearListenerService.kt` | ✅ Phase 6 (native) |
 | **Apple Watch companion** (wrist SOS → phone via WatchConnectivity) | `ios/SurakshaWatch/`, `ios/Runner/PhoneSessionDelegate.swift` | ✅ Phase 6 (native) |
+| **Voice wake-word trigger** (on-device, opt-in, consent-gated) | `lib/core/services/voice_trigger_service.dart` | ✅ Phase 6 |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
@@ -70,11 +71,12 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
   add `AppLocalizations.delegate` and migrate hardcoded strings to `.arb` keys.
 - The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
   Google Maps needs an API key (Android + iOS).
-- **Phase 6 (remaining):** only the always-listening voice hotword still needs
-  a native module — see [`../docs/NATIVE_MODULES.md`](../docs/NATIVE_MODULES.md).
-  Everything else in Phase 6 is done: journey monitoring, community safety map,
+- **Phase 6 is code-complete.** Journey monitoring, community safety map,
   home-screen/lock-screen SOS widgets (Android + iOS), the Android Quick
-  Settings tile, and the **Wear OS + Apple Watch companions**.
+  Settings tile, the Wear OS + Apple Watch companions, and the on-device
+  voice wake-word trigger are all done. Remaining work is operational —
+  see [`../docs/LAUNCH_CHECKLIST.md`](../docs/LAUNCH_CHECKLIST.md) — plus the
+  per-feature setup keys/assets (Maps, Picovoice, siren, `.ppn`).
 - **Community map scaling:** the `nearby` query bounds by latitude and filters
   distance client-side (fine for a viewport radius). Move to geohash querying
   and add server-side moderation/rate-limiting before large-scale rollout.

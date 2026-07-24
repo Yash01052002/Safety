@@ -76,9 +76,28 @@ handler.
 3. The `suraksha` URL scheme is already in `Runner/Info.plist`; ensure the watch
    app's bundle id is `<Runner.bundle.id>.watchkitapp`.
 
-### Always-listening voice trigger
-"Hey Siri, send SOS" already works today via a user-created **Shortcut** bound
-to `suraksha://sos` (no code). A true always-on hotword ("Hey Suraksha, help")
-needs an on-device keyword-spotting engine (e.g. Porcupine) running in the
-foreground service, plus clear mic-privacy disclosure — evaluate battery and
-false-trigger cost before committing.
+### Always-listening voice trigger — implemented (needs a key + keyword)
+"Hey Siri, send SOS" already works via a user-created **Shortcut** bound to
+`suraksha://sos`. A true always-on hotword is implemented with on-device
+keyword spotting (Picovoice Porcupine):
+- `lib/core/services/voice_trigger_service.dart` — wraps `PorcupineManager`;
+  no audio leaves the device. Reports `isConfigured == false` and no-ops if the
+  key or keyword asset is missing, so the app is unaffected without setup.
+- Opt-in setting `voiceTriggerEnabled` (default **off**), enabled only after an
+  explicit mic-privacy consent dialog (Shake settings → Voice trigger).
+- The home screen starts/stops the listener to match the setting; the wake word
+  fires the normal SOS flow (honouring stealth/countdown).
+
+**Setup to activate:**
+1. Create a free access key at the Picovoice Console and train a wake word
+   (e.g. "Hey Suraksha") → download the `.ppn`.
+2. Bundle it as `assets/hey_suraksha.ppn` and declare it under
+   `flutter/assets` in `pubspec.yaml`.
+3. Build with the key: `flutter run --dart-define=PICOVOICE_ACCESS_KEY=...`.
+4. Microphone permission is already declared (Android `RECORD_AUDIO`, iOS
+   `NSMicrophoneUsageDescription`).
+
+**Background note:** the listener runs in the main isolate, so it keeps working
+while the app is backgrounded or the screen is locked *because* the Phase 2
+foreground service keeps the process alive. It does **not** run after the app is
+fully force-quit. Evaluate battery draw before enabling by default.
