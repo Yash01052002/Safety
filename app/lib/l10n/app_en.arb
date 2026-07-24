@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appTitle": "Suraksha",
+  "holdForSos": "HOLD FOR SOS",
+  "shakeOrHoldHint": "Shake your phone or hold the button to alert your guardians.",
+  "sendingSos": "Sending SOS…",
+  "imSafeCancel": "I'm safe — cancel",
+  "sosActive": "SOS ACTIVE",
+  "liveLocationShared": "Your live location is being shared with your guardians.",
+  "imSafeStop": "I'm safe now — stop sharing",
+  "shareLiveLocation": "Share live location",
+  "trustedContacts": "Trusted contacts",
+  "shakeSettings": "Shake to alert",
+  "onMyWay": "On my way",
+  "callPolice": "Call police",
+  "helpIsComing": "Help is coming",
+  "deleteAccount": "Delete my account & data"
+}

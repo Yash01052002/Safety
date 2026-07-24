@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen|keyguard"
+    android:initialLayout="@layout/sos_widget"
+    android:previewImage="@mipmap/ic_launcher"
+    android:description="@string/sos_long_label" />

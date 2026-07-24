@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Suraksha</string>
+	<key>CFBundleName</key>
+	<string>suraksha</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
+	<!-- Location permission strings (required or App Review rejects the build) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Suraksha uses your location to share it with your trusted contacts when you send an SOS.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Suraksha shares your live location with your guardians during an active alert, even when the app is in the background, so they can reach you.</string>
+
+	<key>NSContactsUsageDescription</key>
+	<string>Suraksha lets you pick trusted contacts to alert in an emergency.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Suraksha uses motion sensors to detect a shake gesture that triggers an emergency alert.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Suraksha can record audio during an SOS as evidence for your guardians.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Suraksha can capture a photo during an SOS as evidence for your guardians.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Suraksha saves SOS evidence you capture.</string>
+
+	<!-- Background execution modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Background task id required by flutter_background_service on iOS -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>dev.flutter.background.refresh</string>
+	</array>
+
+	<!-- URL scheme suraksha://sos — a user-created Shortcut bound to the Action
+	     Button / Back Tap / a lock-screen widget / "Hey Siri" opens this to fire
+	     an SOS, covering the case where iOS can't shake-trigger a killed app. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.suraksha.sos</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>suraksha</string>
+			</array>
+		</dict>
+	</array>
+
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+</dict>
+</plist>

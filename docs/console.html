@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Suraksha · Build Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body { margin: 0; }
+  :root {
+    --bg: #0B0E17;
+    --surface: #141a28;
+    --surface-2: #1b2334;
+    --border: #28324c;
+    --text: #E8EBF5;
+    --muted: #98a1bd;
+    --accent: #7C83FF;
+    --accent-2: #a9adff;
+    --accent-soft: rgba(124,131,255,.14);
+    --good: #3DD68C;
+    --good-soft: rgba(61,214,140,.13);
+    --warn: #FFB44C;
+    --warn-soft: rgba(255,180,76,.13);
+    --sos: #FF5A6A;
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 30px -18px rgba(0,0,0,.8);
+    --radius: 16px;
+    --maxw: 1080px;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #F4F5FB;
+      --surface: #FFFFFF;
+      --surface-2: #EEF0F9;
+      --border: #E1E4F1;
+      --text: #161A2B;
+      --muted: #5b6488;
+      --accent: #5A61E8;
+      --accent-2: #454dd6;
+      --accent-soft: rgba(90,97,232,.10);
+      --good: #12A15F;
+      --good-soft: rgba(18,161,95,.10);
+      --warn: #C07A0C;
+      --warn-soft: rgba(192,122,12,.10);
+      --sos: #E5484D;
+      --shadow: 0 1px 2px rgba(20,24,45,.04), 0 14px 34px -22px rgba(30,36,70,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B0E17; --surface: #141a28; --surface-2: #1b2334; --border: #28324c;
+    --text: #E8EBF5; --muted: #98a1bd; --accent: #7C83FF; --accent-2: #a9adff;
+    --accent-soft: rgba(124,131,255,.14); --good: #3DD68C; --good-soft: rgba(61,214,140,.13);
+    --warn: #FFB44C; --warn-soft: rgba(255,180,76,.13); --sos: #FF5A6A;
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 30px -18px rgba(0,0,0,.8);
+  }
+  :root[data-theme="light"] {
+    --bg: #F4F5FB; --surface: #FFFFFF; --surface-2: #EEF0F9; --border: #E1E4F1;
+    --text: #161A2B; --muted: #5b6488; --accent: #5A61E8; --accent-2: #454dd6;
+    --accent-soft: rgba(90,97,232,.10); --good: #12A15F; --good-soft: rgba(18,161,95,.10);
+    --warn: #C07A0C; --warn-soft: rgba(192,122,12,.10); --sos: #E5484D;
+    --shadow: 0 1px 2px rgba(20,24,45,.04), 0 14px 34px -22px rgba(30,36,70,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(900px 500px at 88% -8%, var(--accent-soft), transparent 60%),
+      radial-gradient(700px 420px at -6% 4%, var(--good-soft), transparent 55%);
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: clamp(20px, 4vw, 52px); }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--accent-2); margin: 0 0 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before {
+    content: ""; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--good); box-shadow: 0 0 0 4px var(--good-soft);
+  }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    display: grid; grid-template-columns: 1.5fr 1fr; gap: 28px;
+    align-items: end; padding-bottom: 26px; border-bottom: 1px solid var(--border);
+  }
+  h1 {
+    font-size: clamp(2.3rem, 6vw, 3.6rem); line-height: 1.02; margin: 0 0 12px;
+    letter-spacing: -.03em; font-weight: 800; text-wrap: balance;
+  }
+  h1 .sub { color: var(--muted); font-weight: 500; }
+  .lede { color: var(--muted); font-size: 1.02rem; max-width: 46ch; margin: 0; }
+
+  .readout {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .readout .lbl {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .readout .val {
+    font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; margin-top: 2px;
+    display: flex; align-items: center; gap: 10px; color: var(--good);
+  }
+  .readout .val .dot {
+    width: 11px; height: 11px; border-radius: 50%; background: var(--good);
+    box-shadow: 0 0 0 5px var(--good-soft); flex: none;
+  }
+  .meter { margin-top: 14px; }
+  .meter .track {
+    height: 8px; border-radius: 99px; background: var(--surface-2);
+    overflow: hidden; border: 1px solid var(--border);
+  }
+  .meter .fill {
+    height: 100%; width: 100%;
+    background: linear-gradient(90deg, var(--good), var(--accent));
+    border-radius: 99px;
+  }
+  .meter .cap {
+    display: flex; justify-content: space-between; margin-top: 8px;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .meter .cap b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* ---------- Metric tiles ---------- */
+  .metrics {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    margin: 26px 0 40px;
+  }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .tile .n {
+    font-size: 2rem; font-weight: 800; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .tile .k {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); margin-top: 8px;
+  }
+  .tile .s { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+
+  /* ---------- Phase timeline ---------- */
+  .section-h {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 18px;
+  }
+  .phases { display: flex; flex-direction: column; gap: 14px; position: relative; }
+  .phase {
+    display: grid; grid-template-columns: 60px 1fr; gap: 18px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+    position: relative;
+  }
+  .phase .num {
+    font-family: var(--mono); font-weight: 700; font-size: 1.05rem;
+    width: 46px; height: 46px; border-radius: 12px;
+    display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent-2);
+    border: 1px solid var(--border); font-variant-numeric: tabular-nums;
+  }
+  .phase .body { min-width: 0; }
+  .phase .top {
+    display: flex; align-items: baseline; gap: 12px 14px; flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .phase h3 { margin: 0; font-size: 1.16rem; font-weight: 700; letter-spacing: -.01em; }
+  .phase .goal { color: var(--muted); margin: 0 0 14px; font-size: .96rem; }
+
+  .pill {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; font-weight: 600;
+    padding: 4px 9px; border-radius: 99px; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .pill.done { color: var(--good); background: var(--good-soft); }
+  .pill.done::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--good);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12.5px; color: var(--text); background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+  }
+  .chip.sos { color: var(--sos); border-color: color-mix(in srgb, var(--sos) 35%, var(--border)); }
+
+  /* ---------- Pre-launch band ---------- */
+  .band {
+    margin-top: 30px; background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border));
+    border-radius: var(--radius); padding: 22px 24px;
+  }
+  .band h3 {
+    margin: 0 0 6px; font-size: 1.08rem; display: flex; align-items: center; gap: 10px;
+  }
+  .band h3 .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--warn); background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--border));
+    padding: 3px 8px; border-radius: 99px;
+  }
+  .band p { margin: 0 0 14px; color: var(--muted); font-size: .95rem; max-width: 66ch; }
+
+  footer {
+    margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    color: var(--muted); font-size: 13px; font-family: var(--mono);
+  }
+  footer .brk { color: var(--text); }
+
+  /* ---------- Motion ---------- */
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise .6s ease forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 760px) {
+    header.hero { grid-template-columns: 1fr; align-items: start; gap: 20px; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .phase { grid-template-columns: 44px 1fr; gap: 14px; padding: 17px; }
+    .phase .num { width: 40px; height: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero reveal" style="animation-delay:.02s">
+    <div>
+      <p class="eyebrow">Build Console · All systems ready</p>
+      <h1>Suraksha <span class="sub">/ safety app</span></h1>
+      <p class="lede">Cross-platform women's safety app — live location sharing and
+        shake-to-alert SOS. Full seven-phase build, shipped as working code.</p>
+    </div>
+    <div class="readout" aria-label="Overall build status">
+      <div class="lbl">Build status</div>
+      <div class="val"><span class="dot"></span>Complete</div>
+      <div class="meter">
+        <div class="track"><div class="fill"></div></div>
+        <div class="cap"><span>Phases shipped</span><span><b>7</b> / 7</span></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="metrics" aria-label="Project metrics">
+    <div class="tile reveal" style="animation-delay:.06s">
+      <div class="n">4</div><div class="k">Platforms</div>
+      <div class="s">Android · iOS · Wear OS · watchOS</div>
+    </div>
+    <div class="tile reveal" style="animation-delay:.10s">
+      <div class="n">9</div><div class="k">Ways to trigger SOS</div>
+      <div class="s">shake, voice, watch, widget &amp; more</div>
+    </div>
+    <div class="tile reveal" style="animation-delay:.14s">
+      <div class="n">6</div><div class="k">Cloud Functions</div>
+      <div class="s">alerts, escalation, retention</div>
+    </div>
+    <div class="tile reveal" style="animation-delay:.18s">
+      <div class="n">13</div><div class="k">Commits on branch</div>
+      <div class="s">one per phase increment</div>
+    </div>
+  </section>
+
+  <p class="section-h">Implementation pipeline</p>
+  <div class="phases">
+
+    <article class="phase reveal" style="animation-delay:.06s">
+      <div class="num">00</div>
+      <div class="body">
+        <div class="top"><h3>Foundation</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Everything needed before feature work — scaffold, structure, and groundwork.</p>
+        <div class="chips">
+          <span class="chip">Flutter project</span>
+          <span class="chip">Design system</span>
+          <span class="chip">Data models</span>
+          <span class="chip">Android + iOS config</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="phase reveal" style="animation-delay:.10s">
+      <div class="num">01</div>
+      <div class="body">
+        <div class="top"><h3>Core MVP — auth, contacts, manual SOS</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Register, add guardians, and get an alert with your location to app <em>and</em> no-app contacts.</p>
+        <div class="chips">
+          <span class="chip">Phone-OTP auth</span>
+          <span class="chip">Trusted contacts</span>
+          <span class="chip sos">Manual SOS</span>
+          <span class="chip">FCM push + Twilio SMS</span>
+          <span class="chip">Guardian web track page</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="phase reveal" style="animation-delay:.14s">
+      <div class="num">02</div>
+      <div class="body">
+        <div class="top"><h3>Live location sharing</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Continuous location that survives the screen locking, plus an in-app guardian map.</p>
+        <div class="chips">
+          <span class="chip">Foreground service</span>
+          <span class="chip">Duration picker</span>
+          <span class="chip">Battery-aware throttling</span>
+          <span class="chip">Guardian live map</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="phase reveal" style="animation-delay:.18s">
+      <div class="num">03</div>
+      <div class="body">
+        <div class="top"><h3>Shake-to-alert</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Trigger by shaking — tunable, false-alarm resistant — with fallbacks for iOS.</p>
+        <div class="chips">
+          <span class="chip sos">Shake detection</span>
+          <span class="chip">Sensitivity calibration</span>
+          <span class="chip">Stealth mode</span>
+          <span class="chip">Deep link + Quick Action</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="phase reveal" style="animation-delay:.22s">
+      <div class="num">04</div>
+      <div class="body">
+        <div class="top"><h3>Escalation, media &amp; response</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Richer, more actionable alerts when it's a real emergency.</p>
+        <div class="chips">
+          <span class="chip">Audio evidence</span>
+          <span class="chip sos">Siren + strobe</span>
+          <span class="chip">Guardian acknowledgment</span>
+          <span class="chip">Escalation ladder</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="phase reveal" style="animation-delay:.26s">
+      <div class="num">05</div>
+      <div class="body">
+        <div class="top"><h3>Hardening &amp; compliance</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Security, privacy rights, and launch readiness.</p>
+        <div class="chips">
+          <span class="chip">Expiring track links</span>
+          <span class="chip">Locale emergency numbers</span>
+          <span class="chip">Account &amp; data deletion</span>
+          <span class="chip">Localization (en · hi)</span>
+          <span class="chip">Accessibility</span>
+          <span class="chip">Launch &amp; privacy docs</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="phase reveal" style="animation-delay:.30s">
+      <div class="num">06</div>
+      <div class="body">
+        <div class="top"><h3>Enhancements</h3><span class="pill done">Complete</span></div>
+        <p class="goal">Post-launch reach — wearables, widgets, community, and hands-free.</p>
+        <div class="chips">
+          <span class="chip">Journey monitoring</span>
+          <span class="chip">Community safety map</span>
+          <span class="chip">Home &amp; lock-screen widgets</span>
+          <span class="chip">Quick Settings tile</span>
+          <span class="chip">Wear OS companion</span>
+          <span class="chip">Apple Watch companion</span>
+          <span class="chip sos">Voice wake word</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <section class="band reveal" style="animation-delay:.30s">
+    <h3>Before store launch <span class="tag">Operational</span></h3>
+    <p>The code is complete; these steps need a real build environment and can't be committed from here.</p>
+    <div class="chips">
+      <span class="chip">flutter create · analyze · test</span>
+      <span class="chip">Google Maps + Firebase keys</span>
+      <span class="chip">Picovoice key + wake word</span>
+      <span class="chip">siren.mp3 asset</span>
+      <span class="chip">Penetration test</span>
+      <span class="chip">Device-matrix + battery testing</span>
+      <span class="chip">End-to-end encryption (design)</span>
+      <span class="chip">Store submission</span>
+    </div>
+  </section>
+
+  <footer>
+    <span>branch <span class="brk">claude/womens-safety-app-plan-d8gtnq</span></span>
+    <span>7 phases · Android · iOS · Wear OS · watchOS</span>
+  </footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.pub/
+pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+**/*.keystore
+**/*.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/flutter_export_environment.sh
+**/*.xcworkspace/xcuserdata/
+
+# Firebase (secrets — do NOT commit)
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart
+.env
+functions/node_modules/
+.firebase/
+firebase-debug.log
+
+# OS
+.DS_Store
