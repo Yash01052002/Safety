@@ -141,4 +141,6 @@ Trigger logic (shake / button / hardware) is decoupled from delivery via the
 be swapped without touching the SOS flow. State is exposed through
 `SosController` (a `ChangeNotifier`) consumed by the UI with `provider`.
 
-See [`../MASTER_PLAN.md`](../MASTER_PLAN.md) for the full phased roadmap.
+See [`../MASTER_PLAN.md`](../MASTER_PLAN.md) for the full phased roadmap, or open
+[`../docs/console.html`](../docs/console.html) for a visual build console of all
+seven phases and their status.
