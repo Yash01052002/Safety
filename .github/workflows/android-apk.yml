@@ -103,30 +103,30 @@ jobs:
           groovy = "android/build.gradle"
           path = kts if os.path.exists(kts) else groovy
           src = open(path).read()
-          # Use plugins.withId (fires when the Android plugin is applied,
-          # regardless of evaluation order) — afterEvaluate throws
-          # "already evaluated" because Flutter evaluates :app early.
-          if "compileSdkVersion(36)" in src or "compileSdkVersion 36" in src:
+          # afterEvaluate runs AFTER each plugin's own build.gradle sets its
+          # compileSdk (so our 36 wins), but it throws for :app which Flutter
+          # already evaluated. Guard with !state.executed: skip :app (already 36
+          # from the app patch) and override the not-yet-evaluated plugin modules.
+          if "state.executed" in src:
               pass
           elif path.endswith(".kts"):
               src += (
                   '\nsubprojects {\n'
-                  '    plugins.withId("com.android.library") {\n'
-                  '        extensions.configure<'
-                  'com.android.build.gradle.BaseExtension>("android") '
-                  '{ compileSdkVersion(36) }\n    }\n'
-                  '    plugins.withId("com.android.application") {\n'
-                  '        extensions.configure<'
-                  'com.android.build.gradle.BaseExtension>("android") '
-                  '{ compileSdkVersion(36) }\n    }\n}\n')
+                  '    if (!state.executed) {\n'
+                  '        afterEvaluate {\n'
+                  '            extensions.findByName("android")?.let {\n'
+                  '                (it as com.android.build.gradle.BaseExtension)'
+                  '.compileSdkVersion(36)\n'
+                  '            }\n        }\n    }\n}\n')
               open(path, "w").write(src)
           else:
               src += (
                   '\nsubprojects {\n'
-                  '    plugins.withId("com.android.library") {\n'
-                  '        android { compileSdkVersion 36 }\n    }\n'
-                  '    plugins.withId("com.android.application") {\n'
-                  '        android { compileSdkVersion 36 }\n    }\n}\n')
+                  '    if (!state.executed) {\n'
+                  '        afterEvaluate { proj ->\n'
+                  '            if (proj.extensions.findByName("android") != null) {\n'
+                  '                proj.android { compileSdkVersion 36 }\n'
+                  '            }\n        }\n    }\n}\n')
               open(path, "w").write(src)
           print(f"Patched root {path} to force subproject compileSdk 36")
           PY
