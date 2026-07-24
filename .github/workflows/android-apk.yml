@@ -89,7 +89,44 @@ jobs:
               src += dep
 
           open(path, "w").write(src)
-          print(f"Patched {path}: compileSdk=35 + desugaring")
+          print(f"Patched {path}: compileSdk=36 + desugaring")
+          PY
+
+      # Some older plugins (battery_plus, etc.) hardcode compileSdk 33 in their
+      # own module Gradle, which modern transitive AndroidX libs reject. Force
+      # every subproject to compileSdk 36 from the root Gradle file.
+      - name: Force subproject compileSdk
+        run: |
+          python3 - <<'PY'
+          import os
+          kts = "android/build.gradle.kts"
+          groovy = "android/build.gradle"
+          path = kts if os.path.exists(kts) else groovy
+          src = open(path).read()
+          if "compileSdkVersion(36)" in src or "compileSdkVersion 36" in src:
+              pass
+          elif path.endswith(".kts"):
+              src += (
+                  '\nsubprojects {\n'
+                  '    afterEvaluate {\n'
+                  '        if (plugins.hasPlugin("com.android.library") '
+                  '|| plugins.hasPlugin("com.android.application")) {\n'
+                  '            extensions.configure<'
+                  'com.android.build.gradle.BaseExtension>("android") {\n'
+                  '                compileSdkVersion(36)\n'
+                  '            }\n        }\n    }\n}\n')
+              open(path, "w").write(src)
+          else:
+              src += (
+                  '\nsubprojects {\n'
+                  '    afterEvaluate { project ->\n'
+                  '        if (project.plugins.hasPlugin("com.android.library") '
+                  '|| project.plugins.hasPlugin("com.android.application")) {\n'
+                  '            project.android {\n'
+                  '                compileSdkVersion 36\n'
+                  '            }\n        }\n    }\n}\n')
+              open(path, "w").write(src)
+          print(f"Patched root {path} to force subproject compileSdk 36")
           PY
 
       - run: flutter pub get
