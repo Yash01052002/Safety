@@ -66,6 +66,30 @@
             android:foregroundServiceType="location"
             android:exported="false" />
 
+        <!-- Home-screen / lock-screen SOS widget -->
+        <receiver
+            android:name="app.suraksha.SosWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sos_widget_info" />
+        </receiver>
+
+        <!-- Quick Settings tile: pull-down shade → SOS -->
+        <service
+            android:name="app.suraksha.SosTileService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/sos_short_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
