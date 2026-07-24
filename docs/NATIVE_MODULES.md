@@ -55,10 +55,26 @@ Standalone Android module under `app/wear/`:
 
 ## Still to build (larger native efforts)
 
-### Apple Watch companion (watchOS app)
-A WatchKit app target in the same Xcode workspace. A single SOS button sends a
-message to the phone via `WCSession` (or hits the backend). Add via Xcode
-**File → New → Target → Watch App**.
+### Apple Watch companion (watchOS app) — scaffolded
+watchOS app sources under `app/ios/SurakshaWatch/`:
+- `SurakshaWatchApp.swift` — `@main` app.
+- `ContentView.swift` — single big SOS button (SwiftUI) with idle/sending/
+  sent/queued/failed states.
+- `WatchSosSender.swift` — `WCSession` sender: `sendMessage` when the phone is
+  reachable, else `transferUserInfo` (queued, guaranteed) so nothing is dropped.
+
+Phone side: `app/ios/Runner/PhoneSessionDelegate.swift` — a `WCSessionDelegate`
+that opens `suraksha://sos` on receipt (live or queued), reusing the existing
+handler.
+
+**Wiring** (in Xcode, after `flutter create .`):
+1. **File → New → Target → watchOS → App**, name it `SurakshaWatch`; replace the
+   generated sources with the three files above.
+2. Add `PhoneSessionDelegate.swift` to the **Runner** target and call
+   `PhoneSessionDelegate.shared.activate()` in
+   `application(_:didFinishLaunchingWithOptions:)`.
+3. The `suraksha` URL scheme is already in `Runner/Info.plist`; ensure the watch
+   app's bundle id is `<Runner.bundle.id>.watchkitapp`.
 
 ### Always-listening voice trigger
 "Hey Siri, send SOS" already works today via a user-created **Shortcut** bound
