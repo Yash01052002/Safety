@@ -44,7 +44,7 @@ dependencies:
     sdk: flutter
 
   # Media capture + emergency alarm (Phase 4)
-  record: ^5.0.5                   # audio recording on SOS
+  record: 5.1.2                    # audio recording on SOS (pinned: 5.2.x ships mismatched federated deps)
   image_picker: ^1.0.7             # photo capture
   audioplayers: ^6.0.0             # loud siren
   torch_light: ^1.1.0              # flashlight strobe
