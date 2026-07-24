@@ -58,6 +58,11 @@ dependencies:
   quick_actions: ^1.0.7
   app_links: ^6.1.1
 
+  # Always-listening wake-word trigger (on-device keyword spotting).
+  # Requires a Picovoice access key + a trained keyword (.ppn) — see
+  # docs/NATIVE_MODULES.md. Opt-in; off by default.
+  porcupine_flutter: ^3.0.3
+
   # Utils
   intl: any # pinned by flutter_localizations / gen-l10n to the SDK's version
   battery_plus: ^5.0.3
