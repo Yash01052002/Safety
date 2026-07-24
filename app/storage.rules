@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// SOS media evidence. Only the owner (whose uid is in the path) may write, and
+// only they may read via the console/app. Guardians access specific files
+// through the time-limited download URL mirrored to the public track — not by
+// listing this bucket.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /sosMedia/{userId}/{eventId}/{file} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

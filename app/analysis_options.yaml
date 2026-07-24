@@ -1,0 +1,11 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Deprecations shouldn't fail the build while we track the min Flutter SDK.
+    deprecated_member_use: ignore
+
+linter:
+  rules:
+    # Keep the standard flutter_lints set. One safety-relevant addition:
+    avoid_print: true

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Live location — Suraksha</title>
+
+  <!-- Leaflet + OpenStreetMap: no API key required -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root { --red: #e53935; --green: #2e7d32; --ink: #1a1a2e; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    #map { position: absolute; inset: 0; }
+    .banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: var(--red); color: #fff; padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .banner.safe { background: var(--green); }
+    .banner .dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+    .banner strong { font-weight: 700; }
+    .meta { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+      background: #fff; padding: 12px 16px; border-top: 1px solid #eee;
+      display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    .meta a { color: var(--red); font-weight: 600; text-decoration: none; }
+    .loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 900; color: #666; }
+    @media (prefers-color-scheme: dark) {
+      .meta { background: #14141f; color: #eee; border-top-color: #2a2a3a; }
+    }
+  </style>
+</head>
+<body>
+  <div class="banner" id="banner">
+    <span class="dot"></span>
+    <span id="banner-text"><strong>Loading…</strong></span>
+  </div>
+  <div id="map"></div>
+  <div class="loading" id="loading">Connecting to live location…</div>
+  <div class="meta">
+    <span id="updated">—</span>
+    <a id="gmaps" href="#" target="_blank" rel="noopener">Open in Google Maps ↗</a>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot }
+      from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    // Public web config (safe to expose). Replace with your project's values —
+    // `flutterfire configure` / Firebase console → Project settings → Web app.
+    const firebaseConfig = {
+      apiKey: "REPLACE_ME",
+      authDomain: "REPLACE_ME.firebaseapp.com",
+      projectId: "REPLACE_ME",
+      appId: "REPLACE_ME",
+    };
+
+    // Event id comes from the path: /e/{eventId}  (see firebase.json rewrite).
+    const eventId = (location.pathname.match(/\/e\/([^/]+)/) || [])[1]
+      || new URLSearchParams(location.search).get("e");
+
+    const bannerText = document.getElementById("banner-text");
+    const banner = document.getElementById("banner");
+    const loading = document.getElementById("loading");
+    const updatedEl = document.getElementById("updated");
+    const gmaps = document.getElementById("gmaps");
+
+    if (!eventId) {
+      bannerText.innerHTML = "<strong>Invalid link</strong>";
+      loading.textContent = "This tracking link is missing an event id.";
+    } else {
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const map = L.map("map", { zoomControl: true }).setView([20.5937, 78.9629], 4);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19, attribution: "© OpenStreetMap",
+      }).addTo(map);
+
+      let marker = null, first = true;
+
+      onSnapshot(doc(db, "publicTracks", eventId), (snap) => {
+        loading.style.display = "none";
+        if (!snap.exists()) {
+          bannerText.innerHTML = "<strong>Not found</strong> — link may have expired.";
+          return;
+        }
+        const d = snap.data();
+        const name = d.userName || "Someone";
+        const active = d.status === "active";
+        const isSos = (d.kind || "sos") === "sos";
+
+        banner.classList.toggle("safe", !active);
+        if (active) {
+          bannerText.innerHTML = isSos
+            ? `<strong>${name}</strong> needs help — live location`
+            : `<strong>${name}</strong> is sharing their live location`;
+        } else {
+          bannerText.innerHTML = isSos
+            ? `<strong>${name}</strong> marked themselves safe`
+            : `<strong>${name}</strong> stopped sharing`;
+        }
+
+        if (d.lat != null && d.lng != null) {
+          const pos = [d.lat, d.lng];
+          if (!marker) marker = L.marker(pos).addTo(map);
+          else marker.setLatLng(pos);
+          if (first) { map.setView(pos, 16); first = false; }
+          gmaps.href = `https://maps.google.com/?q=${d.lat},${d.lng}`;
+        }
+        if (d.updatedAt?.toDate) {
+          updatedEl.textContent = "Updated " + d.updatedAt.toDate().toLocaleTimeString();
+        }
+      }, (err) => {
+        loading.style.display = "none";
+        bannerText.innerHTML = "<strong>Connection error</strong>";
+        console.error(err);
+      });
+    }
+  </script>
+</body>
+</html>
