@@ -53,6 +53,35 @@ jobs:
           # an inert string reference and does not affect the build.
           rm -f android/app/src/main/kotlin/app/suraksha/SosWearListenerService.kt
 
+      # flutter_local_notifications requires Java 8+ core-library desugaring.
+      # Enable it in the generated app Gradle file (Kotlin DSL or Groovy).
+      - name: Enable core library desugaring
+        run: |
+          python3 - <<'PY'
+          import os
+          kts = "android/app/build.gradle.kts"
+          groovy = "android/app/build.gradle"
+          path = kts if os.path.exists(kts) else groovy
+          src = open(path).read()
+          is_kts = path.endswith(".kts")
+          flag = ("        isCoreLibraryDesugaringEnabled = true\n"
+                  if is_kts else
+                  "        coreLibraryDesugaringEnabled true\n")
+          if "CoreLibraryDesugaringEnabled" not in src:
+              idx = src.index("compileOptions {")
+              nl = src.index("\n", idx) + 1
+              src = src[:nl] + flag + src[nl:]
+          dep = ('\ndependencies {\n    coreLibraryDesugaring('
+                 '"com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+                 if is_kts else
+                 "\ndependencies {\n    coreLibraryDesugaring "
+                 "'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n")
+          if "coreLibraryDesugaring(" not in src and "coreLibraryDesugaring '" not in src:
+              src += dep
+          open(path, "w").write(src)
+          print(f"Patched {path} for core library desugaring")
+          PY
+
       - run: flutter pub get
 
       - run: flutter build apk --debug
