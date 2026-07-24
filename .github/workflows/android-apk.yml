@@ -66,9 +66,9 @@ jobs:
           src = open(path).read()
           is_kts = path.endswith(".kts")
 
-          # compileSdk >= 34 (deps require it)
+          # compileSdk 36 (androidx.core:core:1.18.0 and others require it)
           src = re.sub(r"compileSdk(Version)?\s*=?\s*flutter\.compileSdkVersion",
-                       "compileSdk = 35" if is_kts else "compileSdk 35", src)
+                       "compileSdk = 36" if is_kts else "compileSdk 36", src)
 
           # core library desugaring flag inside compileOptions { }
           flag = ("        isCoreLibraryDesugaringEnabled = true\n"
