@@ -29,6 +29,11 @@ class SosSettings {
   /// next-priority contact.
   final int escalationMinutes;
 
+  /// Always-listening wake-word trigger. Off by default: it runs on-device
+  /// keyword spotting on the microphone, which the user must explicitly opt in
+  /// to after a clear privacy disclosure.
+  final bool voiceTriggerEnabled;
+
   const SosSettings({
     this.shakeEnabled = true,
     this.thresholdG = 2.7,
@@ -38,6 +43,7 @@ class SosSettings {
     this.captureAudioOnSos = true,
     this.sirenOnSos = false,
     this.escalationMinutes = 3,
+    this.voiceTriggerEnabled = false,
   });
 
   SosSettings copyWith({
@@ -49,6 +55,7 @@ class SosSettings {
     bool? captureAudioOnSos,
     bool? sirenOnSos,
     int? escalationMinutes,
+    bool? voiceTriggerEnabled,
   }) {
     return SosSettings(
       shakeEnabled: shakeEnabled ?? this.shakeEnabled,
@@ -59,6 +66,7 @@ class SosSettings {
       captureAudioOnSos: captureAudioOnSos ?? this.captureAudioOnSos,
       sirenOnSos: sirenOnSos ?? this.sirenOnSos,
       escalationMinutes: escalationMinutes ?? this.escalationMinutes,
+      voiceTriggerEnabled: voiceTriggerEnabled ?? this.voiceTriggerEnabled,
     );
   }
 
@@ -71,6 +79,7 @@ class SosSettings {
         'captureAudioOnSos': captureAudioOnSos,
         'sirenOnSos': sirenOnSos,
         'escalationMinutes': escalationMinutes,
+        'voiceTriggerEnabled': voiceTriggerEnabled,
       };
 
   factory SosSettings.fromMap(Map<String, dynamic> map) {
@@ -83,6 +92,7 @@ class SosSettings {
       captureAudioOnSos: map['captureAudioOnSos'] as bool? ?? true,
       sirenOnSos: map['sirenOnSos'] as bool? ?? false,
       escalationMinutes: (map['escalationMinutes'] as num?)?.toInt() ?? 3,
+      voiceTriggerEnabled: map['voiceTriggerEnabled'] as bool? ?? false,
     );
   }
 }

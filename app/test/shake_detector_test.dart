@@ -56,13 +56,20 @@ void main() {
   });
 
   test('SosSettings round-trips and keeps defaults for missing keys', () {
-    const s = SosSettings(thresholdG: 3.1, stealthMode: true, sirenOnSos: true);
+    const s = SosSettings(
+      thresholdG: 3.1,
+      stealthMode: true,
+      sirenOnSos: true,
+      voiceTriggerEnabled: true,
+    );
     final restored = SosSettings.fromMap(s.toMap());
     expect(restored.thresholdG, 3.1);
     expect(restored.stealthMode, isTrue);
     expect(restored.sirenOnSos, isTrue);
-    // Missing key falls back to default.
+    expect(restored.voiceTriggerEnabled, isTrue);
+    // Missing keys fall back to defaults.
     expect(SosSettings.fromMap(const {}).requiredShakes, 3);
+    expect(SosSettings.fromMap(const {}).voiceTriggerEnabled, isFalse);
   });
 
   test('Ack round-trips response and name', () {
