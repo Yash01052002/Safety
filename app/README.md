@@ -49,6 +49,8 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Journey monitoring** (ETA timer → auto-SOS if overdue) | `lib/features/journey/` | ✅ Phase 6 |
 | **Android App Shortcut / Assistant** (long-press → Send SOS) | `android/.../res/xml/shortcuts.xml` | ✅ Phase 6 |
 | **Community safety map** (pseudonymous area reports, radius query) | `lib/features/community/`, `lib/core/repositories/safety_report_repository.dart` | ✅ Phase 6 |
+| **Home-screen / lock-screen SOS widget** (Android + iOS) | `android/.../SosWidgetProvider.kt`, `ios/SosWidget/SosWidget.swift` | ✅ Phase 6 (native) |
+| **Android Quick Settings SOS tile** | `android/.../SosTileService.kt` | ✅ Phase 6 (native) |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
@@ -66,9 +68,11 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
   add `AppLocalizations.delegate` and migrate hardcoded strings to `.arb` keys.
 - The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
   Google Maps needs an API key (Android + iOS).
-- **Phase 6 (remaining):** wearables (Apple Watch / Wear OS), always-listening
-  voice trigger, and home-screen widgets — these need native modules. Journey
-  monitoring and the community safety map are done.
+- **Phase 6 (remaining):** wearables (Apple Watch / Wear OS) and an
+  always-listening voice trigger still need native modules — see
+  [`../docs/NATIVE_MODULES.md`](../docs/NATIVE_MODULES.md). Journey monitoring,
+  the community safety map, the home-screen/lock-screen SOS widgets (Android +
+  iOS), and the Android Quick Settings tile are done.
 - **Community map scaling:** the `nearby` query bounds by latitude and filters
   distance client-side (fine for a viewport radius). Move to geohash querying
   and add server-side moderation/rate-limiting before large-scale rollout.
