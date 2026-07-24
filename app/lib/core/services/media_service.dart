@@ -3,38 +3,26 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 
 /// Captures short evidence on an SOS — an audio clip, and optionally a photo —
 /// and uploads it to Firebase Storage under the event, returning download URLs
 /// the gateway attaches for guardians.
 class MediaService {
-  final AudioRecorder _recorder = AudioRecorder();
-
-  /// Record [seconds] of audio, upload it, and return its download URL.
-  /// Silent on any failure — evidence is best-effort and must never block the
-  /// alert itself.
+  /// Record a short audio clip on SOS and upload it.
+  ///
+  /// Audio capture is currently disabled: the `record` plugin family ships
+  /// mutually-incompatible federated packages (record_linux vs
+  /// record_platform_interface) that fail the build. To re-enable, add a
+  /// working recorder (e.g. a fixed `record` release, or `flutter_sound`) and
+  /// restore the capture body — the call site already treats a null result as
+  /// "no evidence", so nothing else needs to change. Photo capture is
+  /// unaffected.
   Future<String?> recordAndUploadAudio({
     required String userId,
     required String eventId,
     int seconds = 20,
   }) async {
-    try {
-      if (!await _recorder.hasPermission()) return null;
-      final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/sos_$eventId.m4a';
-
-      await _recorder.start(const RecordConfig(), path: path);
-      await Future.delayed(Duration(seconds: seconds));
-      final result = await _recorder.stop();
-      if (result == null) return null;
-
-      return _upload(userId, eventId, File(result), 'audio.m4a', 'audio/mp4');
-    } catch (e) {
-      debugPrint('audio capture failed: $e');
-      return null;
-    }
+    return null;
   }
 
   /// Snap a single photo (front camera by default) and upload it.
