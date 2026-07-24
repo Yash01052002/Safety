@@ -33,14 +33,27 @@ matches — or change the package in both Kotlin files and the manifest.
   replace the generated Swift with this file. Supports `systemSmall` and the
   `accessoryCircular` **lock-screen** family. Opens `suraksha://sos`.
 
-## Still to build (larger native efforts)
+### Wear OS companion (one-press SOS on the wrist) — scaffolded
+Standalone Android module under `app/wear/`:
+- `wear/build.gradle` — Compose-for-Wear app, id `app.suraksha` (must match the
+  phone app id so the two pair).
+- `wear/src/main/kotlin/app/suraksha/wear/MainActivity.kt` — a single big SOS
+  button (Compose for Wear OS) with sending/sent/failed states.
+- `wear/src/main/kotlin/app/suraksha/wear/SosSender.kt` — delivers the SOS two
+  ways: a `MessageClient` `/sos` message **and** `RemoteActivityHelper` opening
+  `suraksha://sos` on the phone.
+- Phone side: `android/app/.../SosWearListenerService.kt`
+  (`WearableListenerService`) receives the `/sos` message and fires the SOS even
+  when the app is closed; declared as a `<service>` in the phone manifest.
 
-### Wear OS companion (one-press SOS on the wrist)
-A separate Gradle module (`:wear`) with a Compose-for-Wear tile/app whose button
-either (a) opens `suraksha://sos` on the phone via the Wearable
-`MessageClient`/`RemoteActivityHelper`, or (b) calls the backend directly. Needs
-its own manifest, build config, and pairing logic — scaffold with Android
-Studio's Wear OS module template.
+**Wiring** (after `flutter create .`):
+1. `android/settings.gradle` → add `include ':wear'` and the module path.
+2. Phone `android/app/build.gradle` → add
+   `implementation 'com.google.android.gms:play-services-wearable:18.2.0'`.
+3. Sign the watch APK with the **same key** as the phone app so they pair.
+4. Build/install: `./gradlew :wear:installDebug` onto a paired watch/emulator.
+
+## Still to build (larger native efforts)
 
 ### Apple Watch companion (watchOS app)
 A WatchKit app target in the same Xcode workspace. A single SOS button sends a

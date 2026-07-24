@@ -51,6 +51,7 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
 | **Community safety map** (pseudonymous area reports, radius query) | `lib/features/community/`, `lib/core/repositories/safety_report_repository.dart` | ✅ Phase 6 |
 | **Home-screen / lock-screen SOS widget** (Android + iOS) | `android/.../SosWidgetProvider.kt`, `ios/SosWidget/SosWidget.swift` | ✅ Phase 6 (native) |
 | **Android Quick Settings SOS tile** | `android/.../SosTileService.kt` | ✅ Phase 6 (native) |
+| **Wear OS companion** (wrist SOS → phone via message + deep link) | `wear/`, `android/.../SosWearListenerService.kt` | ✅ Phase 6 (native) |
 | Android permissions + foreground service | `android/app/src/main/AndroidManifest.xml` | ✅ |
 | iOS permissions + background modes | `ios/Runner/Info.plist` | ✅ |
 | Dev gateway (console, backendless demo) | `lib/core/services/console_alert_gateway.dart` | ✅ fallback |
@@ -68,11 +69,11 @@ Cross-platform (Android + iOS) safety app built with **Flutter**. Core features:
   add `AppLocalizations.delegate` and migrate hardcoded strings to `.arb` keys.
 - The **siren** needs a bundled `assets/siren.mp3` (see `assets/README.md`);
   Google Maps needs an API key (Android + iOS).
-- **Phase 6 (remaining):** wearables (Apple Watch / Wear OS) and an
-  always-listening voice trigger still need native modules — see
+- **Phase 6 (remaining):** the Apple Watch companion and an always-listening
+  voice trigger still need native modules — see
   [`../docs/NATIVE_MODULES.md`](../docs/NATIVE_MODULES.md). Journey monitoring,
   the community safety map, the home-screen/lock-screen SOS widgets (Android +
-  iOS), and the Android Quick Settings tile are done.
+  iOS), the Android Quick Settings tile, and the **Wear OS companion** are done.
 - **Community map scaling:** the `nearby` query bounds by latitude and filters
   distance client-side (fine for a viewport radius). Move to geohash querying
   and add server-side moderation/rate-limiting before large-scale rollout.
