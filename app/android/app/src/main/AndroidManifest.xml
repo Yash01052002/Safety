@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Location: foreground SOS + background live sharing -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -60,11 +61,14 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- Background service for shake detection + live location -->
+        <!-- Background service for shake detection + live location. The plugin
+             also declares this service (exported=true); override so our
+             location foreground-service type + exported=false win the merge. -->
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
             android:foregroundServiceType="location"
-            android:exported="false" />
+            android:exported="false"
+            tools:replace="android:exported,android:foregroundServiceType" />
 
         <!-- Home-screen / lock-screen SOS widget -->
         <receiver

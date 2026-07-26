@@ -44,7 +44,9 @@ dependencies:
     sdk: flutter
 
   # Media capture + emergency alarm (Phase 4)
-  record: ^5.0.5                   # audio recording on SOS
+  # NOTE: audio recording (`record`) is temporarily removed — its federated
+  # packages (record_linux vs record_platform_interface) are mutually
+  # incompatible and fail the build. See MediaService.recordAndUploadAudio.
   image_picker: ^1.0.7             # photo capture
   audioplayers: ^6.0.0             # loud siren
   torch_light: ^1.1.0              # flashlight strobe

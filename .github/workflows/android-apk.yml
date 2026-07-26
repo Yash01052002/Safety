@@ -1,0 +1,142 @@
+name: Build Android APK
+
+# Builds an installable debug APK on GitHub's runners (this repo holds source
+# only). The finished APK is uploaded as a downloadable artifact on each run.
+on:
+  push:
+    branches: ["**"]
+    paths: ["app/**", ".github/workflows/android-apk.yml"]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+
+      # The repo commits only the native *overlay* (manifest, Kotlin, res); the
+      # full android/ Gradle shell is generated here. Preserve the overlay,
+      # generate the shell, then lay the overlay back on top.
+      - name: Preserve native overlay
+        run: |
+          mkdir -p "$RUNNER_TEMP/overlay"
+          cp -r android/app/src/main/AndroidManifest.xml "$RUNNER_TEMP/overlay/" 2>/dev/null || true
+          cp -r android/app/src/main/kotlin "$RUNNER_TEMP/overlay/" 2>/dev/null || true
+          cp -r android/app/src/main/res "$RUNNER_TEMP/overlay/" 2>/dev/null || true
+
+      - name: Generate Android shell
+        run: flutter create --org app --project-name suraksha --platforms=android .
+
+      - name: Restore native overlay
+        run: |
+          cp -f "$RUNNER_TEMP/overlay/AndroidManifest.xml" android/app/src/main/AndroidManifest.xml
+          cp -rf "$RUNNER_TEMP/overlay/kotlin/." android/app/src/main/kotlin/
+          cp -rf "$RUNNER_TEMP/overlay/res/." android/app/src/main/res/
+          # The phone-side Wear receiver needs play-services-wearable, which is
+          # only wired when you build the Wear companion (manual setup). Exclude
+          # it from the plain app build; its <service> entry in the manifest is
+          # an inert string reference and does not affect the build.
+          rm -f android/app/src/main/kotlin/app/suraksha/SosWearListenerService.kt
+
+      # Patch the generated app Gradle file (Kotlin DSL or Groovy):
+      #  - enable Java 8+ core-library desugaring (flutter_local_notifications)
+      #  - bump compileSdk to 35 (image_picker/exifinterface need >= 34)
+      - name: Patch app Gradle (desugaring + compileSdk)
+        run: |
+          python3 - <<'PY'
+          import os, re
+          kts = "android/app/build.gradle.kts"
+          groovy = "android/app/build.gradle"
+          path = kts if os.path.exists(kts) else groovy
+          src = open(path).read()
+          is_kts = path.endswith(".kts")
+
+          # compileSdk 36 (androidx.core:core:1.18.0 and others require it)
+          src = re.sub(r"compileSdk(Version)?\s*=?\s*flutter\.compileSdkVersion",
+                       "compileSdk = 36" if is_kts else "compileSdk 36", src)
+
+          # core library desugaring flag inside compileOptions { }
+          flag = ("        isCoreLibraryDesugaringEnabled = true\n"
+                  if is_kts else
+                  "        coreLibraryDesugaringEnabled true\n")
+          if "CoreLibraryDesugaringEnabled" not in src:
+              idx = src.index("compileOptions {")
+              nl = src.index("\n", idx) + 1
+              src = src[:nl] + flag + src[nl:]
+
+          # desugar_jdk_libs dependency
+          dep = ('\ndependencies {\n    coreLibraryDesugaring('
+                 '"com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+                 if is_kts else
+                 "\ndependencies {\n    coreLibraryDesugaring "
+                 "'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n")
+          if "coreLibraryDesugaring(" not in src and "coreLibraryDesugaring '" not in src:
+              src += dep
+
+          open(path, "w").write(src)
+          print(f"Patched {path}: compileSdk=36 + desugaring")
+          PY
+
+      # Some older plugins (battery_plus, etc.) hardcode compileSdk 33 in their
+      # own module Gradle, which modern transitive AndroidX libs reject. Force
+      # every subproject to compileSdk 36 from the root Gradle file.
+      - name: Force subproject compileSdk
+        run: |
+          python3 - <<'PY'
+          import os
+          kts = "android/build.gradle.kts"
+          groovy = "android/build.gradle"
+          path = kts if os.path.exists(kts) else groovy
+          src = open(path).read()
+          # afterEvaluate runs AFTER each plugin's own build.gradle sets its
+          # compileSdk (so our 36 wins), but it throws for :app which Flutter
+          # already evaluated. Guard with !state.executed: skip :app (already 36
+          # from the app patch) and override the not-yet-evaluated plugin modules.
+          if "state.executed" in src:
+              pass
+          elif path.endswith(".kts"):
+              src += (
+                  '\nsubprojects {\n'
+                  '    if (!state.executed) {\n'
+                  '        afterEvaluate {\n'
+                  '            extensions.findByName("android")?.let {\n'
+                  '                (it as com.android.build.gradle.BaseExtension)'
+                  '.compileSdkVersion(36)\n'
+                  '            }\n        }\n    }\n}\n')
+              open(path, "w").write(src)
+          else:
+              src += (
+                  '\nsubprojects {\n'
+                  '    if (!state.executed) {\n'
+                  '        afterEvaluate { proj ->\n'
+                  '            if (proj.extensions.findByName("android") != null) {\n'
+                  '                proj.android { compileSdkVersion 36 }\n'
+                  '            }\n        }\n    }\n}\n')
+              open(path, "w").write(src)
+          print(f"Patched root {path} to force subproject compileSdk 36")
+          PY
+
+      - run: flutter pub get
+
+      - run: flutter build apk --debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: suraksha-debug-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
